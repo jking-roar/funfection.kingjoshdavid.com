@@ -1,19 +1,25 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Funfection Infect</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Funfection Infect</title>
 </head>
 <body>
-  <p id="msg">Opening Funfection…</p>
+<p id="msg">Opening Funfection…</p>
 
-  <script>
+<script>
     // Example: read ?code= from the URL
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code") || "";
 
-    const deepLink = "funfection://infect?code=" + encodeURIComponent(code);
+    // Preserve the fragment as a hash on the deep link
+    // window.location.hash includes the leading "#"
+    const hash = window.location.hash || "";
+
+    const deepLink =
+        "funfection://infect?code=" + encodeURIComponent(code) +
+        (hash ? "#" + encodeURIComponent(hash.slice(1)) : "");
 
     // Try immediately
     window.location.href = deepLink;
@@ -28,6 +34,6 @@
       document.getElementById("msg").textContent =
         "If nothing happened, make sure the Funfection app is installed, then try again.";
     }, 1500);
-  </script>
+</script>
 </body>
 </html>
