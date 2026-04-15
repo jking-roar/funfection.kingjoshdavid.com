@@ -1,56 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Funfection – Open in App</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      background: #f0f4f8;
-      color: #333;
-      text-align: center;
-      padding: 1rem;
-    }
-    h1 { font-size: 2rem; margin-bottom: 0.5rem; }
-    p  { font-size: 1rem; color: #555; max-width: 400px; }
-    .code {
-      font-size: 1.4rem;
-      font-weight: bold;
-      background: #e2e8f0;
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      margin: 1rem 0;
-      word-break: break-all;
-    }
-  </style>
-</head>
-<body>
-  <h1>Funfection</h1>
-  <p>Opening infection code in the Funfection app…</p>
-  <div class="code" id="code-display"></div>
-  <p id="fallback" style="display:none;">
-    If the app did not open automatically, make sure you have the Funfection app installed.
-  </p>
-  <script>
-    (function () {
-      var params = new URLSearchParams(window.location.search);
-      var code = params.get('code') || '';
+// Existing code before this line
 
-      var display = document.getElementById('code-display');
-      display.textContent = code ? 'Code: ' + code : '(no code provided)';
+// Your existing code logic to get 'code'
 
-      // Show fallback message after a short delay if the app hasn't opened
-      setTimeout(function () {
-        document.getElementById('fallback').style.display = 'block';
-      }, 2500);
-    })();
-  </script>
-</body>
-</html>
+var deepLink = 'funfection://infect?code=' + encodeURIComponent(code);
+window.location.href = deepLink;
+
+setTimeout(function() {
+    window.location.href = deepLink;
+}, 1000);
+
+// Existing fallback message behavior
+
+// Existing code after this line
