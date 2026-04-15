@@ -31,8 +31,10 @@
 
     // Optional: fallback message
     setTimeout(() => {
-      document.getElementById("msg").textContent =
-        "If nothing happened, make sure the Funfection app is installed, then try again.";
+      const msgElement = document.getElementById("msg");
+      msgElement.innerHTML = 
+        "If nothing happened, make sure the Funfection app is installed, then try again.<br><br>" +
+        "Or click here: <a href=\"" + deepLink + "\">" + deepLink + "</a>";
     }, 1500);
 </script>
 </body>
