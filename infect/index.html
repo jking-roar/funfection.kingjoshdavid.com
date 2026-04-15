@@ -1,14 +1,33 @@
-// Existing code before this line
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Funfection Infect</title>
+</head>
+<body>
+  <p id="msg">Opening Funfection…</p>
 
-// Your existing code logic to get 'code'
+  <script>
+    // Example: read ?code= from the URL
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code") || "";
 
-var deepLink = 'funfection://infect?code=' + encodeURIComponent(code);
-window.location.href = deepLink;
+    const deepLink = "funfection://infect?code=" + encodeURIComponent(code);
 
-setTimeout(function() {
+    // Try immediately
     window.location.href = deepLink;
-}, 1000);
 
-// Existing fallback message behavior
+    // Try again after a moment (sometimes helps on mobile)
+    setTimeout(() => {
+      window.location.href = deepLink;
+    }, 1000);
 
-// Existing code after this line
+    // Optional: fallback message
+    setTimeout(() => {
+      document.getElementById("msg").textContent =
+        "If nothing happened, make sure the Funfection app is installed, then try again.";
+    }, 1500);
+  </script>
+</body>
+</html>
