@@ -199,6 +199,27 @@
       cursor: pointer;
     }
 
+    .preview .editor-overlay {
+      pointer-events: none;
+    }
+
+    .preview .editor-outline {
+      fill: none;
+      stroke: #f59e0b;
+      stroke-width: 1.5;
+      stroke-dasharray: 5 3;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .preview .editor-handle {
+      pointer-events: all;
+      cursor: pointer;
+      fill: #ffffff;
+      stroke: #f59e0b;
+      stroke-width: 1.5;
+      vector-effect: non-scaling-stroke;
+    }
+
     .placeholder {
       color: var(--muted);
       text-align: center;
@@ -305,6 +326,7 @@
 
     let selectedLine = null;
     let lastSelectedNode = null;
+    let dragState = null;
 
     function setStatus(message, isError = false) {
       status.textContent = message;
@@ -345,6 +367,7 @@
       const source = svgInput.value.trim();
       selectedLine = null;
       lastSelectedNode = null;
+      dragState = null;
 
       if (!source) {
         preview.innerHTML = '<p class="placeholder">Paste or open an SVG to see the preview.</p>';
@@ -458,6 +481,241 @@
       setStatus(`Applied fill/stroke to line ${selectedLine}.`);
     }
 
+    function getActiveSvg() {
+      return preview.querySelector('svg');
+    }
+
+    function getNumberAttr(node, attribute, fallback = 0) {
+      const value = Number(node.getAttribute(attribute));
+      return Number.isFinite(value) ? value : fallback;
+    }
+
+    function updateSelectedLineAttributes(attrs) {
+      if (!selectedLine) return false;
+      const lines = svgInput.value.split('\n');
+      const lineIndex = selectedLine - 1;
+      if (!lines[lineIndex] || !lines[lineIndex].includes('<')) return false;
+
+      let updated = lines[lineIndex];
+      Object.entries(attrs).forEach(([key, value]) => {
+        if (value === undefined || value === null || Number.isNaN(value)) return;
+        const normalized = Number(value.toFixed(2));
+        updated = updateOrInsertAttribute(updated, key, normalized);
+      });
+      lines[lineIndex] = updated;
+      svgInput.value = lines.join('\n');
+      return true;
+    }
+
+    function toSvgPoint(svg, event) {
+      const point = svg.createSVGPoint();
+      point.x = event.clientX;
+      point.y = event.clientY;
+      const ctm = svg.getScreenCTM();
+      return ctm ? point.matrixTransform(ctm.inverse()) : { x: 0, y: 0 };
+    }
+
+    function addHandle(overlay, x, y, kind) {
+      const handle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      handle.setAttribute('class', 'editor-handle');
+      handle.setAttribute('cx', x);
+      handle.setAttribute('cy', y);
+      handle.setAttribute('r', 6);
+      handle.dataset.handleKind = kind;
+      overlay.appendChild(handle);
+      return handle;
+    }
+
+    function drawHandlesForSelected(node) {
+      const svg = getActiveSvg();
+      if (!svg || !node || node.closest('.editor-overlay')) return;
+
+      const previousOverlay = svg.querySelector('.editor-overlay');
+      if (previousOverlay) previousOverlay.remove();
+
+      const overlay = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      overlay.setAttribute('class', 'editor-overlay');
+      const tagName = node.tagName.toLowerCase();
+
+      const bbox = typeof node.getBBox === 'function' ? node.getBBox() : null;
+      if (!bbox) return;
+
+      const outline = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      outline.setAttribute('class', 'editor-outline');
+      outline.setAttribute('x', bbox.x);
+      outline.setAttribute('y', bbox.y);
+      outline.setAttribute('width', Math.max(1, bbox.width));
+      outline.setAttribute('height', Math.max(1, bbox.height));
+      overlay.appendChild(outline);
+
+      if (tagName === 'rect') {
+        const x = getNumberAttr(node, 'x', 0);
+        const y = getNumberAttr(node, 'y', 0);
+        const width = getNumberAttr(node, 'width', bbox.width);
+        const height = getNumberAttr(node, 'height', bbox.height);
+        addHandle(overlay, x, y, 'rect-nw');
+        addHandle(overlay, x + width, y + height, 'rect-se');
+        addHandle(overlay, x + width / 2, y + height / 2, 'move');
+      } else if (tagName === 'circle') {
+        const cx = getNumberAttr(node, 'cx', bbox.x + bbox.width / 2);
+        const cy = getNumberAttr(node, 'cy', bbox.y + bbox.height / 2);
+        const r = getNumberAttr(node, 'r', Math.max(bbox.width, bbox.height) / 2);
+        addHandle(overlay, cx, cy, 'circle-center');
+        addHandle(overlay, cx + r, cy, 'circle-radius');
+      } else if (tagName === 'ellipse') {
+        const cx = getNumberAttr(node, 'cx', bbox.x + bbox.width / 2);
+        const cy = getNumberAttr(node, 'cy', bbox.y + bbox.height / 2);
+        const rx = getNumberAttr(node, 'rx', bbox.width / 2);
+        const ry = getNumberAttr(node, 'ry', bbox.height / 2);
+        addHandle(overlay, cx, cy, 'ellipse-center');
+        addHandle(overlay, cx + rx, cy, 'ellipse-rx');
+        addHandle(overlay, cx, cy + ry, 'ellipse-ry');
+      } else if (tagName === 'line') {
+        const x1 = getNumberAttr(node, 'x1', bbox.x);
+        const y1 = getNumberAttr(node, 'y1', bbox.y);
+        const x2 = getNumberAttr(node, 'x2', bbox.x + bbox.width);
+        const y2 = getNumberAttr(node, 'y2', bbox.y + bbox.height);
+        addHandle(overlay, x1, y1, 'line-start');
+        addHandle(overlay, x2, y2, 'line-end');
+        addHandle(overlay, (x1 + x2) / 2, (y1 + y2) / 2, 'move');
+      } else if (tagName === 'text') {
+        const x = getNumberAttr(node, 'x', bbox.x);
+        const y = getNumberAttr(node, 'y', bbox.y + bbox.height);
+        addHandle(overlay, x, y, 'move');
+      } else {
+        addHandle(overlay, bbox.x + bbox.width / 2, bbox.y + bbox.height / 2, 'move');
+      }
+
+      svg.appendChild(overlay);
+    }
+
+    function beginHandleDrag(event, target) {
+      const svg = getActiveSvg();
+      if (!svg || !lastSelectedNode || !selectedLine) return;
+      const point = toSvgPoint(svg, event);
+      const tag = lastSelectedNode.tagName.toLowerCase();
+      const state = { tag, kind: target.dataset.handleKind, start: point };
+
+      if (tag === 'rect') {
+        state.x = getNumberAttr(lastSelectedNode, 'x', 0);
+        state.y = getNumberAttr(lastSelectedNode, 'y', 0);
+        state.width = getNumberAttr(lastSelectedNode, 'width', 0);
+        state.height = getNumberAttr(lastSelectedNode, 'height', 0);
+      } else if (tag === 'circle') {
+        state.cx = getNumberAttr(lastSelectedNode, 'cx', 0);
+        state.cy = getNumberAttr(lastSelectedNode, 'cy', 0);
+        state.r = Math.max(1, getNumberAttr(lastSelectedNode, 'r', 1));
+      } else if (tag === 'ellipse') {
+        state.cx = getNumberAttr(lastSelectedNode, 'cx', 0);
+        state.cy = getNumberAttr(lastSelectedNode, 'cy', 0);
+        state.rx = Math.max(1, getNumberAttr(lastSelectedNode, 'rx', 1));
+        state.ry = Math.max(1, getNumberAttr(lastSelectedNode, 'ry', 1));
+      } else if (tag === 'line') {
+        state.x1 = getNumberAttr(lastSelectedNode, 'x1', 0);
+        state.y1 = getNumberAttr(lastSelectedNode, 'y1', 0);
+        state.x2 = getNumberAttr(lastSelectedNode, 'x2', 0);
+        state.y2 = getNumberAttr(lastSelectedNode, 'y2', 0);
+      } else if (tag === 'text') {
+        state.x = getNumberAttr(lastSelectedNode, 'x', 0);
+        state.y = getNumberAttr(lastSelectedNode, 'y', 0);
+      }
+
+      dragState = state;
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    function applyDragUpdate(event) {
+      if (!dragState || !lastSelectedNode) return;
+      const svg = getActiveSvg();
+      if (!svg) return;
+
+      const point = toSvgPoint(svg, event);
+      const dx = point.x - dragState.start.x;
+      const dy = point.y - dragState.start.y;
+      const attrs = {};
+
+      if (dragState.tag === 'rect') {
+        if (dragState.kind === 'move') {
+          attrs.x = dragState.x + dx;
+          attrs.y = dragState.y + dy;
+        } else if (dragState.kind === 'rect-se') {
+          attrs.width = Math.max(1, dragState.width + dx);
+          attrs.height = Math.max(1, dragState.height + dy);
+        } else if (dragState.kind === 'rect-nw') {
+          const x2 = dragState.x + dragState.width;
+          const y2 = dragState.y + dragState.height;
+          attrs.x = Math.min(point.x, x2 - 1);
+          attrs.y = Math.min(point.y, y2 - 1);
+          attrs.width = Math.max(1, x2 - attrs.x);
+          attrs.height = Math.max(1, y2 - attrs.y);
+        }
+      } else if (dragState.tag === 'circle') {
+        if (dragState.kind === 'circle-center') {
+          attrs.cx = dragState.cx + dx;
+          attrs.cy = dragState.cy + dy;
+        } else if (dragState.kind === 'circle-radius') {
+          attrs.r = Math.max(1, Math.hypot(point.x - dragState.cx, point.y - dragState.cy));
+        }
+      } else if (dragState.tag === 'ellipse') {
+        if (dragState.kind === 'ellipse-center') {
+          attrs.cx = dragState.cx + dx;
+          attrs.cy = dragState.cy + dy;
+        } else if (dragState.kind === 'ellipse-rx') {
+          attrs.rx = Math.max(1, Math.abs(point.x - dragState.cx));
+        } else if (dragState.kind === 'ellipse-ry') {
+          attrs.ry = Math.max(1, Math.abs(point.y - dragState.cy));
+        }
+      } else if (dragState.tag === 'line') {
+        if (dragState.kind === 'line-start') {
+          attrs.x1 = point.x;
+          attrs.y1 = point.y;
+        } else if (dragState.kind === 'line-end') {
+          attrs.x2 = point.x;
+          attrs.y2 = point.y;
+        } else if (dragState.kind === 'move') {
+          attrs.x1 = dragState.x1 + dx;
+          attrs.y1 = dragState.y1 + dy;
+          attrs.x2 = dragState.x2 + dx;
+          attrs.y2 = dragState.y2 + dy;
+        }
+      } else if (dragState.tag === 'text' || dragState.kind === 'move') {
+        attrs.x = (dragState.x || 0) + dx;
+        attrs.y = (dragState.y || 0) + dy;
+      }
+
+      Object.entries(attrs).forEach(([key, value]) => {
+        lastSelectedNode.setAttribute(key, Number(value.toFixed(2)));
+      });
+      drawHandlesForSelected(lastSelectedNode);
+      setStatus(`Editing <${dragState.tag}> visually. Release pointer to apply to source.`);
+    }
+
+    function endDragUpdate() {
+      if (!dragState || !lastSelectedNode) return;
+      const changedAttrs = {};
+      Array.from(lastSelectedNode.attributes).forEach((attr) => {
+        if (/^(x|y|x1|y1|x2|y2|cx|cy|r|rx|ry|width|height)$/.test(attr.name)) {
+          changedAttrs[attr.name] = Number(attr.value);
+        }
+      });
+
+      if (updateSelectedLineAttributes(changedAttrs)) {
+        const selected = selectedLine;
+        renderSvg();
+        focusLine(selected);
+        const target = preview.querySelector(`[data-src-line="${selected}"]`);
+        if (target) {
+          target.setAttribute('data-selected', 'true');
+          lastSelectedNode = target;
+          drawHandlesForSelected(target);
+        }
+      }
+
+      setStatus('Applied visual edits to source.');
+      dragState = null;
+    }
+
     preview.addEventListener('click', (event) => {
       const target = event.target.closest('[data-src-line]');
       if (!target) return;
@@ -471,10 +729,20 @@
 
       const line = Number(target.getAttribute('data-src-line'));
       focusLine(line);
+      drawHandlesForSelected(target);
 
       const tagName = target.tagName ? target.tagName.toLowerCase() : 'element';
-      setStatus(`Selected <${tagName}> on line ${line}.`);
+      setStatus(`Selected <${tagName}> on line ${line}. Drag handles in preview to edit geometry.`);
     });
+
+    preview.addEventListener('pointerdown', (event) => {
+      const handle = event.target.closest('.editor-handle');
+      if (!handle) return;
+      beginHandleDrag(event, handle);
+    });
+
+    window.addEventListener('pointermove', applyDragUpdate);
+    window.addEventListener('pointerup', endDragUpdate);
 
     svgInput.addEventListener('input', renderSvg);
 
