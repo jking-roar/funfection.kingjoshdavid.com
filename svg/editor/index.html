@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SVG Editor | Funfection</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --border: #d6dce8;
+      --text: #1e2530;
+      --muted: #637083;
+      --accent: #2563eb;
+      --accent-hover: #1e4fc2;
+      --danger: #dc2626;
+      --shadow: 0 10px 30px rgba(21, 36, 66, 0.08);
+      --focus: #f59e0b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 580px) 1fr;
+      gap: 1rem;
+      padding: 1rem;
+      height: 100vh;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .panel header {
+      border-bottom: 1px solid var(--border);
+      padding: 0.875rem 1rem;
+    }
+
+    h1 {
+      font-size: 1.125rem;
+      margin: 0;
+    }
+
+    .sub {
+      margin-top: 0.25rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .controls,
+    .tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding: 0.875rem 1rem;
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+    }
+
+    .tools {
+      background: #fafcff;
+    }
+
+    .tools .section {
+      display: inline-flex;
+      gap: 0.45rem;
+      align-items: center;
+      padding-right: 0.6rem;
+      margin-right: 0.15rem;
+      border-right: 1px solid var(--border);
+    }
+
+    .tools .section:last-child {
+      border-right: none;
+      margin-right: 0;
+      padding-right: 0;
+    }
+
+    .tools small {
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    button,
+    .file-button {
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: white;
+      padding: 0.55rem 0.8rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    button:hover,
+    .file-button:hover {
+      background: var(--accent-hover);
+    }
+
+    button.secondary {
+      background: #4b5563;
+    }
+
+    button.secondary:hover {
+      background: #3b4450;
+    }
+
+    button.ghost {
+      background: #eef2ff;
+      color: #2b418f;
+      border: 1px solid #c5d1ff;
+    }
+
+    button.ghost:hover {
+      background: #dce6ff;
+    }
+
+    button.danger {
+      background: var(--danger);
+    }
+
+    button.danger:hover {
+      background: #b91c1c;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    input[type="color"] {
+      width: 2rem;
+      height: 2rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: white;
+      padding: 0.1rem;
+      cursor: pointer;
+    }
+
+    textarea {
+      width: 100%;
+      border: none;
+      border-radius: 0 0 12px 12px;
+      resize: none;
+      flex: 1;
+      min-height: 0;
+      padding: 1rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+      font-size: 0.875rem;
+      line-height: 1.4;
+      background: #fcfdff;
+      color: #111827;
+      outline: none;
+      tab-size: 2;
+    }
+
+    .preview-wrap {
+      padding: 1rem;
+      overflow: auto;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .preview {
+      min-height: 100%;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      background: white;
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+    }
+
+    .preview [data-selected="true"] {
+      filter: drop-shadow(0 0 3px var(--focus));
+      cursor: pointer;
+    }
+
+    .placeholder {
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .status {
+      font-size: 0.85rem;
+      color: var(--muted);
+      padding: 0.7rem 1rem 1rem;
+      border-top: 1px solid var(--border);
+      margin-top: auto;
+    }
+
+    .status.error {
+      color: var(--danger);
+    }
+
+    @media (max-width: 1000px) {
+      .layout {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+
+      .panel {
+        min-height: 460px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="layout">
+    <section class="panel" aria-label="SVG source editor">
+      <header>
+        <h1>SVG Editor</h1>
+        <div class="sub">Open, edit, preview, and download SVG files.</div>
+      </header>
+
+      <div class="controls">
+        <label for="fileInput" class="file-button">Open SVG File</label>
+        <input id="fileInput" type="file" accept=".svg,image/svg+xml" />
+        <button id="downloadBtn" type="button">Download SVG</button>
+        <button id="formatBtn" type="button" class="secondary">Format</button>
+        <button id="resetBtn" type="button" class="danger">Reset</button>
+      </div>
+
+      <div class="tools" aria-label="SVG tools">
+        <div class="section">
+          <small>Insert:</small>
+          <button class="ghost snippet-btn" data-snippet="<rect x=\"40\" y=\"40\" width=\"120\" height=\"80\" fill=\"#22c55e\" />">Rect</button>
+          <button class="ghost snippet-btn" data-snippet="<circle cx=\"120\" cy=\"120\" r=\"45\" fill=\"#f59e0b\" />">Circle</button>
+          <button class="ghost snippet-btn" data-snippet="<text x=\"60\" y=\"60\" font-size=\"24\" fill=\"#111827\">Text</text>">Text</button>
+        </div>
+        <div class="section">
+          <small>Selected:</small>
+          <label for="fillColor">Fill</label>
+          <input id="fillColor" type="color" value="#2563eb" />
+          <label for="strokeColor">Stroke</label>
+          <input id="strokeColor" type="color" value="#111827" />
+          <button id="applyStyleBtn" type="button" class="ghost">Apply</button>
+        </div>
+      </div>
+
+      <textarea id="svgInput" spellcheck="false" aria-label="SVG markup"></textarea>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="panel" aria-label="Live SVG preview">
+      <header>
+        <h1>Live Preview</h1>
+        <div class="sub">Click an element in the preview to jump to its line in the source.</div>
+      </header>
+      <div class="preview-wrap">
+        <div id="preview" class="preview">
+          <p class="placeholder">Paste or open an SVG to see the preview.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="420" height="220" viewBox="0 0 420 220" role="img" aria-label="Sample">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+  <rect width="420" height="220" rx="18" fill="url(#bg)"/>
+  <circle cx="90" cy="110" r="55" fill="#ffffff22"/>
+  <text x="210" y="118" text-anchor="middle" font-size="36" font-family="Verdana, sans-serif" fill="white">Funfection</text>
+</svg>`;
+
+    const svgInput = document.getElementById('svgInput');
+    const preview = document.getElementById('preview');
+    const status = document.getElementById('status');
+    const fileInput = document.getElementById('fileInput');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const formatBtn = document.getElementById('formatBtn');
+    const applyStyleBtn = document.getElementById('applyStyleBtn');
+    const fillColor = document.getElementById('fillColor');
+    const strokeColor = document.getElementById('strokeColor');
+    const snippetButtons = document.querySelectorAll('.snippet-btn');
+
+    let selectedLine = null;
+    let lastSelectedNode = null;
+
+    function setStatus(message, isError = false) {
+      status.textContent = message;
+      status.classList.toggle('error', isError);
+    }
+
+    function instrumentSvg(source) {
+      return source
+        .split('\n')
+        .map((line, index) => {
+          const lineNo = index + 1;
+          if (line.includes('data-src-line=')) return line;
+          if (/^\s*<\/?(svg|defs|g|path|rect|circle|ellipse|line|polyline|polygon|text|tspan|use|image|clipPath|mask|linearGradient|radialGradient|stop|pattern|symbol|marker|filter|fe\w+)(\s|>|\/)/.test(line) && !/^\s*<\//.test(line)) {
+            return line.replace(/^(\s*<[a-zA-Z][\w:.-]*)/, `$1 data-src-line="${lineNo}"`);
+          }
+          return line;
+        })
+        .join('\n');
+    }
+
+    function focusLine(lineNumber) {
+      if (!lineNumber || lineNumber < 1) return;
+      const lines = svgInput.value.split('\n');
+      if (lineNumber > lines.length) return;
+
+      let start = 0;
+      for (let i = 0; i < lineNumber - 1; i += 1) {
+        start += lines[i].length + 1;
+      }
+
+      const end = start + lines[lineNumber - 1].length;
+      svgInput.focus();
+      svgInput.setSelectionRange(start, end);
+      selectedLine = lineNumber;
+    }
+
+    function renderSvg() {
+      const source = svgInput.value.trim();
+      selectedLine = null;
+      lastSelectedNode = null;
+
+      if (!source) {
+        preview.innerHTML = '<p class="placeholder">Paste or open an SVG to see the preview.</p>';
+        setStatus('Editor is empty.');
+        return;
+      }
+
+      if (!source.includes('<svg') || !source.includes('</svg>')) {
+        preview.innerHTML = '<p class="placeholder">Current content is not valid SVG markup.</p>';
+        setStatus('Missing <svg> root element.', true);
+        return;
+      }
+
+      preview.innerHTML = instrumentSvg(svgInput.value);
+      setStatus('Preview updated. Click a shape to jump to that line.');
+    }
+
+    function loadTextFile(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        svgInput.value = String(reader.result || '');
+        renderSvg();
+        setStatus(`Loaded ${file.name}.`);
+      };
+      reader.onerror = () => {
+        setStatus('Could not read file.', true);
+      };
+      reader.readAsText(file);
+    }
+
+    function downloadSvg() {
+      const content = svgInput.value.trim();
+      if (!content) {
+        setStatus('Nothing to download yet.', true);
+        return;
+      }
+
+      const blob = new Blob([content], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'image.svg';
+      link.click();
+      URL.revokeObjectURL(url);
+      setStatus('Downloaded image.svg.');
+    }
+
+    function formatSvg() {
+      const content = svgInput.value.trim();
+      if (!content) {
+        setStatus('Nothing to format.', true);
+        return;
+      }
+
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(content, 'image/svg+xml');
+      if (xmlDoc.querySelector('parsererror')) {
+        setStatus('Cannot format: SVG markup is invalid XML.', true);
+        return;
+      }
+
+      const serialized = new XMLSerializer().serializeToString(xmlDoc.documentElement);
+      svgInput.value = serialized.replace(/></g, '>\n<');
+      renderSvg();
+      setStatus('SVG formatted.');
+    }
+
+    function insertSnippet(snippet) {
+      const start = svgInput.selectionStart;
+      const end = svgInput.selectionEnd;
+      const value = svgInput.value;
+      const prefix = value.slice(0, start);
+      const suffix = value.slice(end);
+      const insertion = `\n  ${snippet}`;
+
+      svgInput.value = `${prefix}${insertion}${suffix}`;
+      const cursor = prefix.length + insertion.length;
+      svgInput.focus();
+      svgInput.setSelectionRange(cursor, cursor);
+      renderSvg();
+      setStatus('Inserted element snippet.');
+    }
+
+    function updateOrInsertAttribute(line, attr, value) {
+      if (line.includes(`${attr}=`)) {
+        return line.replace(new RegExp(`${attr}="[^"]*"`), `${attr}="${value}"`);
+      }
+      return line.replace(/\/?\s*>\s*$/, ` ${attr}="${value}"$&`);
+    }
+
+    function applyStyleToSelectedLine() {
+      if (!selectedLine) {
+        setStatus('Click a preview element first to select a line.', true);
+        return;
+      }
+
+      const lines = svgInput.value.split('\n');
+      const lineIndex = selectedLine - 1;
+      if (!lines[lineIndex] || !lines[lineIndex].includes('<')) {
+        setStatus('Selected line is not editable SVG markup.', true);
+        return;
+      }
+
+      let updated = lines[lineIndex];
+      updated = updateOrInsertAttribute(updated, 'fill', fillColor.value);
+      updated = updateOrInsertAttribute(updated, 'stroke', strokeColor.value);
+      lines[lineIndex] = updated;
+      svgInput.value = lines.join('\n');
+      renderSvg();
+      focusLine(selectedLine);
+      setStatus(`Applied fill/stroke to line ${selectedLine}.`);
+    }
+
+    preview.addEventListener('click', (event) => {
+      const target = event.target.closest('[data-src-line]');
+      if (!target) return;
+
+      if (lastSelectedNode) {
+        lastSelectedNode.removeAttribute('data-selected');
+      }
+
+      target.setAttribute('data-selected', 'true');
+      lastSelectedNode = target;
+
+      const line = Number(target.getAttribute('data-src-line'));
+      focusLine(line);
+
+      const tagName = target.tagName ? target.tagName.toLowerCase() : 'element';
+      setStatus(`Selected <${tagName}> on line ${line}.`);
+    });
+
+    svgInput.addEventListener('input', renderSvg);
+
+    fileInput.addEventListener('change', (event) => {
+      const [file] = event.target.files || [];
+      if (file) {
+        loadTextFile(file);
+      }
+      event.target.value = '';
+    });
+
+    snippetButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        insertSnippet(button.dataset.snippet || '');
+      });
+    });
+
+    downloadBtn.addEventListener('click', downloadSvg);
+    applyStyleBtn.addEventListener('click', applyStyleToSelectedLine);
+    resetBtn.addEventListener('click', () => {
+      svgInput.value = sampleSvg;
+      renderSvg();
+      setStatus('Loaded sample SVG.');
+    });
+    formatBtn.addEventListener('click', formatSvg);
+
+    svgInput.value = sampleSvg;
+    renderSvg();
+  </script>
+</body>
+</html>
