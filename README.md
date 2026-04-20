@@ -25,4 +25,4 @@ This site now also serves an in-browser SVG editor at:
 
 - `https://funfection.kingjoshdavid.com/svg/editor`
 
-The page lets you open local `.svg` files, edit markup with a live preview, and download the updated SVG.
+The page lets you open local `.svg` files, edit markup with a live preview, insert common shapes, click previewed elements to jump to source lines, and download the updated SVG.
