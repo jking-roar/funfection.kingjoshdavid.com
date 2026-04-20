@@ -18,3 +18,11 @@ keytool -list -v -keystore <your-keystore>.jks -alias <your-alias> 2>/dev/null |
 ```
 
 Leaving the placeholder value in place will cause Android App Links verification to fail and the OS will not open the app when the link is tapped.
+
+## SVG editor endpoint
+
+This site now also serves an in-browser SVG editor at:
+
+- `https://funfection.kingjoshdavid.com/svg/editor`
+
+The page lets you open local `.svg` files, edit markup with a live preview, and download the updated SVG.
