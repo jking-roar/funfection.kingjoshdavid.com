@@ -268,9 +268,12 @@
       <div class="tools" aria-label="SVG tools">
         <div class="section">
           <small>Insert:</small>
-          <button class="ghost snippet-btn" data-snippet="<rect x=\"40\" y=\"40\" width=\"120\" height=\"80\" fill=\"#22c55e\" />">Rect</button>
-          <button class="ghost snippet-btn" data-snippet="<circle cx=\"120\" cy=\"120\" r=\"45\" fill=\"#f59e0b\" />">Circle</button>
-          <button class="ghost snippet-btn" data-snippet="<text x=\"60\" y=\"60\" font-size=\"24\" fill=\"#111827\">Text</text>">Text</button>
+          <button class="ghost snippet-btn" data-shape="rect">Rect</button>
+          <button class="ghost snippet-btn" data-shape="circle">Circle</button>
+          <button class="ghost snippet-btn" data-shape="text">Text</button>
+          <button class="ghost snippet-btn" data-shape="line">Line</button>
+          <button class="ghost snippet-btn" data-shape="arc">Arc</button>
+          <button class="ghost snippet-btn" data-shape="bezier">Bezier</button>
         </div>
         <div class="section">
           <small>Selected:</small>
@@ -328,6 +331,10 @@
     let lastSelectedNode = null;
     let dragState = null;
 
+    function isMobileViewport() {
+      return window.matchMedia('(max-width: 1000px), (pointer: coarse)').matches;
+    }
+
     function setStatus(message, isError = false) {
       status.textContent = message;
       status.classList.toggle('error', isError);
@@ -347,7 +354,7 @@
         .join('\n');
     }
 
-    function focusLine(lineNumber) {
+    function focusLine(lineNumber, shouldFocus = true) {
       if (!lineNumber || lineNumber < 1) return;
       const lines = svgInput.value.split('\n');
       if (lineNumber > lines.length) return;
@@ -358,13 +365,15 @@
       }
 
       const end = start + lines[lineNumber - 1].length;
-      svgInput.focus();
+      if (shouldFocus) svgInput.focus();
       svgInput.setSelectionRange(start, end);
       selectedLine = lineNumber;
     }
 
-    function renderSvg() {
+    function renderSvg(options = {}) {
       const source = svgInput.value.trim();
+      const selectLine = options.selectLine || null;
+      const keepTextareaFocus = options.keepTextareaFocus !== false;
       selectedLine = null;
       lastSelectedNode = null;
       dragState = null;
@@ -382,6 +391,18 @@
       }
 
       preview.innerHTML = instrumentSvg(svgInput.value);
+
+      if (selectLine) {
+        const target = preview.querySelector(`[data-src-line="${selectLine}"]`);
+        if (target) {
+          target.setAttribute('data-selected', 'true');
+          lastSelectedNode = target;
+          selectedLine = selectLine;
+          drawHandlesForSelected(target);
+          focusLine(selectLine, keepTextareaFocus);
+        }
+      }
+
       setStatus('Preview updated. Click a shape to jump to that line.');
     }
 
@@ -435,22 +456,6 @@
       setStatus('SVG formatted.');
     }
 
-    function insertSnippet(snippet) {
-      const start = svgInput.selectionStart;
-      const end = svgInput.selectionEnd;
-      const value = svgInput.value;
-      const prefix = value.slice(0, start);
-      const suffix = value.slice(end);
-      const insertion = `\n  ${snippet}`;
-
-      svgInput.value = `${prefix}${insertion}${suffix}`;
-      const cursor = prefix.length + insertion.length;
-      svgInput.focus();
-      svgInput.setSelectionRange(cursor, cursor);
-      renderSvg();
-      setStatus('Inserted element snippet.');
-    }
-
     function updateOrInsertAttribute(line, attr, value) {
       if (line.includes(`${attr}=`)) {
         return line.replace(new RegExp(`${attr}="[^"]*"`), `${attr}="${value}"`);
@@ -476,8 +481,7 @@
       updated = updateOrInsertAttribute(updated, 'stroke', strokeColor.value);
       lines[lineIndex] = updated;
       svgInput.value = lines.join('\n');
-      renderSvg();
-      focusLine(selectedLine);
+      renderSvg({ selectLine: selectedLine });
       setStatus(`Applied fill/stroke to line ${selectedLine}.`);
     }
 
@@ -499,6 +503,10 @@
       let updated = lines[lineIndex];
       Object.entries(attrs).forEach(([key, value]) => {
         if (value === undefined || value === null || Number.isNaN(value)) return;
+        if (key === 'd') {
+          updated = updateOrInsertAttribute(updated, key, value);
+          return;
+        }
         const normalized = Number(value.toFixed(2));
         updated = updateOrInsertAttribute(updated, key, normalized);
       });
@@ -524,6 +532,35 @@
       handle.dataset.handleKind = kind;
       overlay.appendChild(handle);
       return handle;
+    }
+
+    function parsePathData(d) {
+      const line = /^\s*M\s*([-\d.]+)\s+([-\d.]+)\s+L\s*([-\d.]+)\s+([-\d.]+)\s*$/i.exec(d || '');
+      if (line) {
+        return { type: 'line', x1: Number(line[1]), y1: Number(line[2]), x2: Number(line[3]), y2: Number(line[4]) };
+      }
+      const arc = /^\s*M\s*([-\d.]+)\s+([-\d.]+)\s+A\s*([-\d.]+)\s+([-\d.]+)\s+0\s+0\s+([01])\s+([-\d.]+)\s+([-\d.]+)\s*$/i.exec(d || '');
+      if (arc) {
+        return {
+          type: 'arc',
+          x1: Number(arc[1]), y1: Number(arc[2]), rx: Number(arc[3]), ry: Number(arc[4]), sweep: Number(arc[5]), x2: Number(arc[6]), y2: Number(arc[7])
+        };
+      }
+      const bez = /^\s*M\s*([-\d.]+)\s+([-\d.]+)\s+C\s*([-\d.]+)\s+([-\d.]+),\s*([-\d.]+)\s+([-\d.]+),\s*([-\d.]+)\s+([-\d.]+)\s*$/i.exec(d || '');
+      if (bez) {
+        return {
+          type: 'bezier',
+          x1: Number(bez[1]), y1: Number(bez[2]), c1x: Number(bez[3]), c1y: Number(bez[4]), c2x: Number(bez[5]), c2y: Number(bez[6]), x2: Number(bez[7]), y2: Number(bez[8])
+        };
+      }
+      return null;
+    }
+
+    function buildPathData(path) {
+      if (path.type === 'line') return `M ${path.x1} ${path.y1} L ${path.x2} ${path.y2}`;
+      if (path.type === 'arc') return `M ${path.x1} ${path.y1} A ${path.rx} ${path.ry} 0 0 ${path.sweep} ${path.x2} ${path.y2}`;
+      if (path.type === 'bezier') return `M ${path.x1} ${path.y1} C ${path.c1x} ${path.c1y}, ${path.c2x} ${path.c2y}, ${path.x2} ${path.y2}`;
+      return '';
     }
 
     function drawHandlesForSelected(node) {
@@ -578,6 +615,23 @@
         addHandle(overlay, x1, y1, 'line-start');
         addHandle(overlay, x2, y2, 'line-end');
         addHandle(overlay, (x1 + x2) / 2, (y1 + y2) / 2, 'move');
+      } else if (tagName === 'path') {
+        const path = parsePathData(node.getAttribute('d'));
+        if (!path) {
+          addHandle(overlay, bbox.x + bbox.width / 2, bbox.y + bbox.height / 2, 'move');
+        } else if (path.type === 'line') {
+          addHandle(overlay, path.x1, path.y1, 'path-start');
+          addHandle(overlay, path.x2, path.y2, 'path-end');
+        } else if (path.type === 'arc') {
+          addHandle(overlay, path.x1, path.y1, 'path-start');
+          addHandle(overlay, path.x2, path.y2, 'path-end');
+          addHandle(overlay, (path.x1 + path.x2) / 2, (path.y1 + path.y2) / 2 - path.ry, 'path-arc-mid');
+        } else if (path.type === 'bezier') {
+          addHandle(overlay, path.x1, path.y1, 'path-start');
+          addHandle(overlay, path.c1x, path.c1y, 'path-c1');
+          addHandle(overlay, path.c2x, path.c2y, 'path-c2');
+          addHandle(overlay, path.x2, path.y2, 'path-end');
+        }
       } else if (tagName === 'text') {
         const x = getNumberAttr(node, 'x', bbox.x);
         const y = getNumberAttr(node, 'y', bbox.y + bbox.height);
@@ -615,6 +669,10 @@
         state.y1 = getNumberAttr(lastSelectedNode, 'y1', 0);
         state.x2 = getNumberAttr(lastSelectedNode, 'x2', 0);
         state.y2 = getNumberAttr(lastSelectedNode, 'y2', 0);
+      } else if (tag === 'path') {
+        const parsed = parsePathData(lastSelectedNode.getAttribute('d'));
+        if (!parsed) return;
+        state.path = parsed;
       } else if (tag === 'text') {
         state.x = getNumberAttr(lastSelectedNode, 'x', 0);
         state.y = getNumberAttr(lastSelectedNode, 'y', 0);
@@ -679,12 +737,45 @@
           attrs.x2 = dragState.x2 + dx;
           attrs.y2 = dragState.y2 + dy;
         }
+      } else if (dragState.tag === 'path') {
+        const path = { ...dragState.path };
+        if (path.type === 'line') {
+          if (dragState.kind === 'path-start') {
+            path.x1 = point.x; path.y1 = point.y;
+          } else if (dragState.kind === 'path-end') {
+            path.x2 = point.x; path.y2 = point.y;
+          }
+        } else if (path.type === 'arc') {
+          if (dragState.kind === 'path-start') {
+            path.x1 = point.x; path.y1 = point.y;
+          } else if (dragState.kind === 'path-end') {
+            path.x2 = point.x; path.y2 = point.y;
+          } else if (dragState.kind === 'path-arc-mid') {
+            path.ry = Math.max(1, Math.abs(((path.y1 + path.y2) / 2) - point.y));
+            path.rx = Math.max(1, Math.abs(((path.x1 + path.x2) / 2) - point.x));
+          }
+        } else if (path.type === 'bezier') {
+          if (dragState.kind === 'path-start') {
+            path.x1 = point.x; path.y1 = point.y;
+          } else if (dragState.kind === 'path-end') {
+            path.x2 = point.x; path.y2 = point.y;
+          } else if (dragState.kind === 'path-c1') {
+            path.c1x = point.x; path.c1y = point.y;
+          } else if (dragState.kind === 'path-c2') {
+            path.c2x = point.x; path.c2y = point.y;
+          }
+        }
+        attrs.d = buildPathData(path);
       } else if (dragState.tag === 'text' || dragState.kind === 'move') {
         attrs.x = (dragState.x || 0) + dx;
         attrs.y = (dragState.y || 0) + dy;
       }
 
       Object.entries(attrs).forEach(([key, value]) => {
+        if (key === 'd') {
+          lastSelectedNode.setAttribute('d', value);
+          return;
+        }
         lastSelectedNode.setAttribute(key, Number(value.toFixed(2)));
       });
       drawHandlesForSelected(lastSelectedNode);
@@ -695,28 +786,69 @@
       if (!dragState || !lastSelectedNode) return;
       const changedAttrs = {};
       Array.from(lastSelectedNode.attributes).forEach((attr) => {
-        if (/^(x|y|x1|y1|x2|y2|cx|cy|r|rx|ry|width|height)$/.test(attr.name)) {
-          changedAttrs[attr.name] = Number(attr.value);
+        if (/^(x|y|x1|y1|x2|y2|cx|cy|r|rx|ry|width|height|d)$/.test(attr.name)) {
+          changedAttrs[attr.name] = attr.name === 'd' ? attr.value : Number(attr.value);
         }
       });
 
       if (updateSelectedLineAttributes(changedAttrs)) {
         const selected = selectedLine;
-        renderSvg();
-        focusLine(selected);
-        const target = preview.querySelector(`[data-src-line="${selected}"]`);
-        if (target) {
-          target.setAttribute('data-selected', 'true');
-          lastSelectedNode = target;
-          drawHandlesForSelected(target);
-        }
+        renderSvg({ selectLine: selected, keepTextareaFocus: !isMobileViewport() });
       }
 
       setStatus('Applied visual edits to source.');
       dragState = null;
     }
 
+    function createTemplate(shape) {
+      if (shape === 'rect') return '<rect x="60" y="60" width="140" height="90" fill="#22c55e" stroke="#14532d" stroke-width="2" />';
+      if (shape === 'circle') return '<circle cx="160" cy="120" r="50" fill="#f59e0b" stroke="#7c2d12" stroke-width="2" />';
+      if (shape === 'text') return '<text x="80" y="120" font-size="28" font-family="Verdana, sans-serif" fill="#111827">Edit Me</text>';
+      if (shape === 'line') return '<line x1="60" y1="70" x2="280" y2="170" stroke="#0f172a" stroke-width="4" stroke-linecap="round" />';
+      if (shape === 'arc') return '<path d="M 80 150 A 90 60 0 0 1 280 150" fill="none" stroke="#9333ea" stroke-width="4" />';
+      if (shape === 'bezier') return '<path d="M 70 160 C 130 30, 220 220, 300 110" fill="none" stroke="#0284c7" stroke-width="4" />';
+      return '';
+    }
+
+    function insertTemplateShape(shape) {
+      const content = svgInput.value.trim();
+      if (!content) {
+        setStatus('Start with an SVG root before inserting shapes.', true);
+        return;
+      }
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(content, 'image/svg+xml');
+      const root = xmlDoc.documentElement;
+      if (!root || root.tagName.toLowerCase() !== 'svg' || xmlDoc.querySelector('parsererror')) {
+        setStatus('Cannot insert element: current markup is not valid SVG XML.', true);
+        return;
+      }
+
+      const template = createTemplate(shape);
+      if (!template) return;
+      const snippetDoc = parser.parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${template}</svg>`, 'image/svg+xml');
+      const node = snippetDoc.documentElement.firstElementChild;
+      if (!node) {
+        setStatus('Failed to create SVG element.', true);
+        return;
+      }
+
+      root.appendChild(xmlDoc.importNode(node, true));
+      const serialized = new XMLSerializer().serializeToString(root).replace(/></g, '>\n<');
+      svgInput.value = serialized;
+      const lines = serialized.split('\n');
+      const tagNeedle = `<${node.tagName}`;
+      let lastLine = -1;
+      for (let i = 0; i < lines.length; i += 1) {
+        if (lines[i].includes(tagNeedle)) lastLine = i;
+      }
+      const selectLine = lastLine > -1 ? lastLine + 1 : null;
+      renderSvg({ selectLine, keepTextareaFocus: !isMobileViewport() });
+      setStatus(`Added ${shape} example. You can now adjust it with drag handles in preview.`);
+    }
+
     preview.addEventListener('click', (event) => {
+      if (event.target.closest('.editor-handle')) return;
       const target = event.target.closest('[data-src-line]');
       if (!target) return;
 
@@ -728,7 +860,7 @@
       lastSelectedNode = target;
 
       const line = Number(target.getAttribute('data-src-line'));
-      focusLine(line);
+      focusLine(line, !isMobileViewport());
       drawHandlesForSelected(target);
 
       const tagName = target.tagName ? target.tagName.toLowerCase() : 'element';
@@ -744,7 +876,7 @@
     window.addEventListener('pointermove', applyDragUpdate);
     window.addEventListener('pointerup', endDragUpdate);
 
-    svgInput.addEventListener('input', renderSvg);
+    svgInput.addEventListener('input', () => renderSvg());
 
     fileInput.addEventListener('change', (event) => {
       const [file] = event.target.files || [];
@@ -756,7 +888,7 @@
 
     snippetButtons.forEach((button) => {
       button.addEventListener('click', () => {
-        insertSnippet(button.dataset.snippet || '');
+        insertTemplateShape(button.dataset.shape || '');
       });
     });
 
@@ -772,5 +904,6 @@
     svgInput.value = sampleSvg;
     renderSvg();
   </script>
+
 </body>
 </html>
