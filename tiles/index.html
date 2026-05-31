@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tile Image Maker | Funfection</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #eef3fb;
+      --card: #ffffff;
+      --ink: #172033;
+      --muted: #5d6b82;
+      --border: #d6deeb;
+      --accent: #5b4bff;
+      --accent-strong: #4234d9;
+      --danger: #dc2626;
+      --shadow: 0 18px 50px rgba(23, 32, 51, 0.12);
+      --checker-a: #f8fafc;
+      --checker-b: #e2e8f0;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(91, 75, 255, 0.16), transparent 32rem),
+        linear-gradient(135deg, #f9fbff 0%, var(--bg) 100%);
+      color: var(--ink);
+    }
+
+    header.site-header {
+      padding: 1.25rem clamp(1rem, 3vw, 2rem) 0;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .home-link {
+      color: var(--accent-strong);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    main {
+      width: min(1280px, 100%);
+      margin: 0 auto;
+      padding: 1rem clamp(1rem, 3vw, 2rem) 2rem;
+    }
+
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 4.5rem);
+      line-height: 0.95;
+      letter-spacing: -0.06em;
+    }
+
+    .intro {
+      color: var(--muted);
+      max-width: 45rem;
+      margin: 0.7rem 0 0;
+      font-size: 1rem;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(300px, 420px) 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+    }
+
+    .panel-header {
+      padding: 1rem 1.1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .panel-header p {
+      margin: 0.25rem 0 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .controls {
+      display: grid;
+      gap: 0.95rem;
+      padding: 1rem;
+    }
+
+    .control-row {
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    label,
+    .label {
+      color: var(--ink);
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    input[type="number"],
+    select,
+    input[type="color"] {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      padding: 0.7rem 0.8rem;
+    }
+
+    input[type="color"] {
+      height: 3rem;
+      padding: 0.25rem;
+    }
+
+    .inline-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .palette {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 0.45rem;
+    }
+
+    .swatch,
+    button {
+      border: 0;
+      border-radius: 12px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 800;
+    }
+
+    .swatch {
+      aspect-ratio: 1;
+      min-height: 2.4rem;
+      border: 2px solid transparent;
+      box-shadow: inset 0 0 0 1px rgba(23, 32, 51, 0.14), 0 2px 8px rgba(23, 32, 51, 0.08);
+    }
+
+    .swatch.active {
+      border-color: var(--ink);
+      outline: 3px solid rgba(91, 75, 255, 0.22);
+    }
+
+    .swatch.eraser {
+      background:
+        linear-gradient(45deg, transparent 45%, var(--danger) 45% 55%, transparent 55%),
+        conic-gradient(var(--checker-a) 25%, var(--checker-b) 0 50%, var(--checker-a) 0 75%, var(--checker-b) 0);
+      background-size: 100% 100%, 18px 18px;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    button {
+      background: var(--accent);
+      color: #fff;
+      padding: 0.72rem 0.9rem;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    button:hover { background: var(--accent-strong); transform: translateY(-1px); }
+    button.secondary { background: #e8ecf5; color: var(--ink); }
+    button.secondary:hover { background: #dce3f0; }
+    button.danger { background: var(--danger); }
+
+    .hint {
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.45;
+      margin: 0;
+    }
+
+    .canvas-panel {
+      display: grid;
+      grid-template-rows: auto auto;
+      gap: 1rem;
+    }
+
+    .maker-area {
+      padding: 1rem;
+      display: grid;
+      grid-template-columns: minmax(260px, 460px) 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .editor-wrap,
+    .preview-wrap {
+      display: grid;
+      gap: 0.7rem;
+    }
+
+    .canvas-shell {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background:
+        conic-gradient(var(--checker-a) 25%, var(--checker-b) 0 50%, var(--checker-a) 0 75%, var(--checker-b) 0) 0 / 24px 24px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.8);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+      touch-action: none;
+    }
+
+    #editorCanvas { cursor: crosshair; }
+
+    .preview-grid {
+      display: grid;
+      gap: 0;
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+
+    .preview-tile {
+      width: 100%;
+      height: 100%;
+      background:
+        conic-gradient(var(--checker-a) 25%, var(--checker-b) 0 50%, var(--checker-a) 0 75%, var(--checker-b) 0) 0 / 18px 18px;
+    }
+
+    .preview-tile canvas { width: 100%; height: 100%; }
+
+    .section-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .section-title span {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .mode-card {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 0.85rem;
+      background: #fbfdff;
+    }
+
+    @media (max-width: 980px) {
+      .workspace,
+      .maker-area { grid-template-columns: 1fr; }
+      .hero { display: block; }
+    }
+
+    @media (max-width: 560px) {
+      .inline-controls { grid-template-columns: 1fr; }
+      .palette { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <a class="home-link" href="/">← Funfection home</a>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="page-title">
+      <div>
+        <h1 id="page-title">Tile image maker</h1>
+        <p class="intro">Draw one square tile, then preview it as a repeating pattern. Change the tile size, repeat count, symmetry mode, and whether repeated edges behave like a torus or a Möbius strip.</p>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <aside class="panel" aria-label="Tile controls">
+        <div class="panel-header">
+          <h2>Controls</h2>
+          <p>Choose a color or eraser, then drag on the tile canvas.</p>
+        </div>
+
+        <div class="controls">
+          <div class="inline-controls">
+            <div class="control-row">
+              <label for="tileSize">Tile size</label>
+              <input id="tileSize" type="number" min="4" max="64" step="1" value="16" />
+            </div>
+            <div class="control-row">
+              <label for="repeatCount">Preview repeats</label>
+              <input id="repeatCount" type="number" min="1" max="9" step="1" value="3" />
+            </div>
+          </div>
+
+          <div class="control-row mode-card">
+            <label for="mirrorMode">Edit mirroring</label>
+            <select id="mirrorMode">
+              <option value="none">No mirroring</option>
+              <option value="horizontal">Left ↔ right</option>
+              <option value="vertical">Top ↔ bottom</option>
+              <option value="both">All four quadrants</option>
+            </select>
+            <p class="hint">Mirroring duplicates each stroke across the selected axis while you draw.</p>
+          </div>
+
+          <div class="control-row mode-card">
+            <label for="topologyMode">Repeat topology</label>
+            <select id="topologyMode">
+              <option value="torus">Torus: repeat without flipping</option>
+              <option value="mobius-horizontal">Möbius: flip across left/right seams</option>
+              <option value="mobius-vertical">Möbius: flip across top/bottom seams</option>
+              <option value="mobius-both">Möbius: flip across both seams</option>
+            </select>
+            <p class="hint">Möbius previews alternate mirrored copies so adjacent tiles can meet as flipped edges.</p>
+          </div>
+
+          <div class="control-row">
+            <div class="label">Palette</div>
+            <div id="palette" class="palette" aria-label="Color palette"></div>
+          </div>
+
+          <div class="inline-controls">
+            <div class="control-row">
+              <label for="customColor">Custom color</label>
+              <input id="customColor" type="color" value="#5b4bff" />
+            </div>
+            <div class="control-row">
+              <span class="label">Actions</span>
+              <div class="button-row">
+                <button id="addColor" type="button" class="secondary">Add color</button>
+                <button id="clearAll" type="button" class="danger">Clear all</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <section class="panel canvas-panel" aria-label="Tile editor and preview">
+        <div class="panel-header">
+          <h2>Draw and preview</h2>
+          <p>The left square is your editable tile. The right square shows the repeated pattern.</p>
+        </div>
+
+        <div class="maker-area">
+          <div class="editor-wrap">
+            <div class="section-title">
+              <h2>Tile input</h2>
+              <span id="sizeLabel">16 × 16</span>
+            </div>
+            <div class="canvas-shell">
+              <canvas id="editorCanvas" width="512" height="512" aria-label="Editable tile canvas"></canvas>
+            </div>
+          </div>
+
+          <div class="preview-wrap">
+            <div class="section-title">
+              <h2>Pattern preview</h2>
+              <span id="repeatLabel">3 × 3 torus</span>
+            </div>
+            <div id="previewGrid" class="preview-grid" aria-label="Repeated tile preview"></div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const editorCanvas = document.getElementById('editorCanvas');
+    const editorContext = editorCanvas.getContext('2d');
+    const tileSizeInput = document.getElementById('tileSize');
+    const repeatCountInput = document.getElementById('repeatCount');
+    const mirrorModeInput = document.getElementById('mirrorMode');
+    const topologyModeInput = document.getElementById('topologyMode');
+    const paletteElement = document.getElementById('palette');
+    const customColorInput = document.getElementById('customColor');
+    const addColorButton = document.getElementById('addColor');
+    const clearAllButton = document.getElementById('clearAll');
+    const previewGrid = document.getElementById('previewGrid');
+    const sizeLabel = document.getElementById('sizeLabel');
+    const repeatLabel = document.getElementById('repeatLabel');
+
+    const canvasPixels = 512;
+    const transparent = '';
+    const defaultPalette = [
+      '#111827', '#ffffff', '#ef4444', '#f97316', '#facc15', '#22c55e',
+      '#14b8a6', '#38bdf8', '#2563eb', '#7c3aed', '#ec4899', '#8b5e34'
+    ];
+
+    let tileSize = Number(tileSizeInput.value);
+    let repeatCount = Number(repeatCountInput.value);
+    let selectedColor = defaultPalette[0];
+    let palette = [...defaultPalette];
+    let grid = createGrid(tileSize);
+    let isDrawing = false;
+
+    function createGrid(size) {
+      return Array.from({ length: size }, () => Array.from({ length: size }, () => transparent));
+    }
+
+    function clampNumber(value, min, max, fallback) {
+      const parsed = Number.parseInt(value, 10);
+      if (Number.isNaN(parsed)) return fallback;
+      return Math.max(min, Math.min(max, parsed));
+    }
+
+    function resizeGrid(nextSize) {
+      const nextGrid = createGrid(nextSize);
+      const copiedSize = Math.min(tileSize, nextSize);
+      for (let y = 0; y < copiedSize; y += 1) {
+        for (let x = 0; x < copiedSize; x += 1) {
+          nextGrid[y][x] = grid[y][x];
+        }
+      }
+      tileSize = nextSize;
+      grid = nextGrid;
+      tileSizeInput.value = String(tileSize);
+      render();
+    }
+
+    function getMirroredCells(x, y) {
+      const max = tileSize - 1;
+      const cells = [[x, y]];
+      const mirrorMode = mirrorModeInput.value;
+
+      if (mirrorMode === 'horizontal' || mirrorMode === 'both') {
+        cells.push([max - x, y]);
+      }
+      if (mirrorMode === 'vertical' || mirrorMode === 'both') {
+        cells.push([x, max - y]);
+      }
+      if (mirrorMode === 'both') {
+        cells.push([max - x, max - y]);
+      }
+
+      return [...new Map(cells.map(([cellX, cellY]) => [`${cellX},${cellY}`, [cellX, cellY]])).values()];
+    }
+
+    function paintCell(x, y) {
+      getMirroredCells(x, y).forEach(([cellX, cellY]) => {
+        grid[cellY][cellX] = selectedColor;
+      });
+      render();
+    }
+
+    function getPointerCell(event) {
+      const rect = editorCanvas.getBoundingClientRect();
+      const x = Math.floor(((event.clientX - rect.left) / rect.width) * tileSize);
+      const y = Math.floor(((event.clientY - rect.top) / rect.height) * tileSize);
+      return {
+        x: Math.max(0, Math.min(tileSize - 1, x)),
+        y: Math.max(0, Math.min(tileSize - 1, y))
+      };
+    }
+
+    function drawTileToCanvas(canvas, options = {}) {
+      const context = canvas.getContext('2d');
+      const { flipX = false, flipY = false, showGrid = false } = options;
+      const cellSize = canvas.width / tileSize;
+
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.save();
+      if (flipX || flipY) {
+        context.translate(flipX ? canvas.width : 0, flipY ? canvas.height : 0);
+        context.scale(flipX ? -1 : 1, flipY ? -1 : 1);
+      }
+
+      for (let y = 0; y < tileSize; y += 1) {
+        for (let x = 0; x < tileSize; x += 1) {
+          if (!grid[y][x]) continue;
+          context.fillStyle = grid[y][x];
+          context.fillRect(Math.round(x * cellSize), Math.round(y * cellSize), Math.ceil(cellSize), Math.ceil(cellSize));
+        }
+      }
+      context.restore();
+
+      if (showGrid && tileSize <= 32) {
+        context.strokeStyle = 'rgba(23, 32, 51, 0.16)';
+        context.lineWidth = 1;
+        for (let i = 0; i <= tileSize; i += 1) {
+          const position = Math.round(i * cellSize) + 0.5;
+          context.beginPath();
+          context.moveTo(position, 0);
+          context.lineTo(position, canvas.height);
+          context.stroke();
+          context.beginPath();
+          context.moveTo(0, position);
+          context.lineTo(canvas.width, position);
+          context.stroke();
+        }
+      }
+    }
+
+    function getPreviewFlips(row, column) {
+      const topology = topologyModeInput.value;
+      return {
+        flipX: topology === 'mobius-horizontal' || topology === 'mobius-both' ? column % 2 === 1 : false,
+        flipY: topology === 'mobius-vertical' || topology === 'mobius-both' ? row % 2 === 1 : false
+      };
+    }
+
+    function renderPalette() {
+      paletteElement.innerHTML = '';
+      const tools = [{ color: transparent, label: 'Eraser', eraser: true }, ...palette.map(color => ({ color, label: color }))];
+
+      tools.forEach(tool => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `swatch${tool.eraser ? ' eraser' : ''}${selectedColor === tool.color ? ' active' : ''}`;
+        button.setAttribute('aria-label', tool.label);
+        button.title = tool.label;
+        if (!tool.eraser) button.style.background = tool.color;
+        button.addEventListener('click', () => {
+          selectedColor = tool.color;
+          renderPalette();
+        });
+        paletteElement.appendChild(button);
+      });
+    }
+
+    function renderPreview() {
+      previewGrid.style.gridTemplateColumns = `repeat(${repeatCount}, 1fr)`;
+      previewGrid.innerHTML = '';
+
+      for (let row = 0; row < repeatCount; row += 1) {
+        for (let column = 0; column < repeatCount; column += 1) {
+          const tile = document.createElement('div');
+          tile.className = 'preview-tile';
+          const canvas = document.createElement('canvas');
+          canvas.width = 256;
+          canvas.height = 256;
+          tile.appendChild(canvas);
+          previewGrid.appendChild(tile);
+          drawTileToCanvas(canvas, getPreviewFlips(row, column));
+        }
+      }
+    }
+
+    function render() {
+      sizeLabel.textContent = `${tileSize} × ${tileSize}`;
+      repeatLabel.textContent = `${repeatCount} × ${repeatCount} ${topologyModeInput.options[topologyModeInput.selectedIndex].text.split(':')[0].toLowerCase()}`;
+      drawTileToCanvas(editorCanvas, { showGrid: true });
+      renderPreview();
+      renderPalette();
+    }
+
+    editorCanvas.addEventListener('pointerdown', event => {
+      isDrawing = true;
+      editorCanvas.setPointerCapture(event.pointerId);
+      const { x, y } = getPointerCell(event);
+      paintCell(x, y);
+    });
+
+    editorCanvas.addEventListener('pointermove', event => {
+      if (!isDrawing) return;
+      const { x, y } = getPointerCell(event);
+      paintCell(x, y);
+    });
+
+    editorCanvas.addEventListener('pointerup', () => { isDrawing = false; });
+    editorCanvas.addEventListener('pointercancel', () => { isDrawing = false; });
+    editorCanvas.addEventListener('pointerleave', () => { isDrawing = false; });
+
+    tileSizeInput.addEventListener('change', () => {
+      resizeGrid(clampNumber(tileSizeInput.value, 4, 64, tileSize));
+    });
+
+    repeatCountInput.addEventListener('change', () => {
+      repeatCount = clampNumber(repeatCountInput.value, 1, 9, repeatCount);
+      repeatCountInput.value = String(repeatCount);
+      render();
+    });
+
+    mirrorModeInput.addEventListener('change', render);
+    topologyModeInput.addEventListener('change', render);
+
+    addColorButton.addEventListener('click', () => {
+      const color = customColorInput.value.toLowerCase();
+      if (!palette.includes(color)) palette.push(color);
+      selectedColor = color;
+      renderPalette();
+    });
+
+    clearAllButton.addEventListener('click', () => {
+      grid = createGrid(tileSize);
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

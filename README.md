@@ -26,3 +26,11 @@ This site now also serves an in-browser SVG editor at:
 - `https://funfection.kingjoshdavid.com/svg/editor`
 
 The page lets you open local `.svg` files, edit markup with a live preview, insert common shapes, click previewed elements to jump to source lines, and download the updated SVG.
+
+## Tile image maker endpoint
+
+This site also serves an in-browser tile image maker at:
+
+- `https://funfection.kingjoshdavid.com/tiles/`
+
+The page provides a configurable square pixel tile canvas, color palette with eraser and clear-all tools, adjustable repeated previews, edit mirroring across horizontal/vertical axes, and torus or Möbius-style repeat previews.
