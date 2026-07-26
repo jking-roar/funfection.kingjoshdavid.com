@@ -410,7 +410,6 @@
 
   <script>
     const editorCanvas = document.getElementById('editorCanvas');
-    const editorContext = editorCanvas.getContext('2d');
     const tileSizeInput = document.getElementById('tileSize');
     const repeatCountInput = document.getElementById('repeatCount');
     const mirrorModeInput = document.getElementById('mirrorMode');
@@ -423,7 +422,6 @@
     const sizeLabel = document.getElementById('sizeLabel');
     const repeatLabel = document.getElementById('repeatLabel');
 
-    const canvasPixels = 512;
     const transparent = '';
     const defaultPalette = [
       '#111827', '#ffffff', '#ef4444', '#f97316', '#facc15', '#22c55e',
@@ -436,6 +434,17 @@
     let palette = [...defaultPalette];
     let grid = createGrid(tileSize);
     let isDrawing = false;
+    let renderScheduled = false;
+
+    function scheduleRender() {
+      if (!renderScheduled) {
+        renderScheduled = true;
+        requestAnimationFrame(() => {
+          renderScheduled = false;
+          render();
+        });
+      }
+    }
 
     function createGrid(size) {
       return Array.from({ length: size }, () => Array.from({ length: size }, () => transparent));
@@ -483,7 +492,7 @@
       getMirroredCells(x, y).forEach(([cellX, cellY]) => {
         grid[cellY][cellX] = selectedColor;
       });
-      render();
+      scheduleRender();
     }
 
     function getPointerCell(event) {
@@ -551,6 +560,7 @@
         button.type = 'button';
         button.className = `swatch${tool.eraser ? ' eraser' : ''}${selectedColor === tool.color ? ' active' : ''}`;
         button.setAttribute('aria-label', tool.label);
+        button.setAttribute('aria-pressed', selectedColor === tool.color ? 'true' : 'false');
         button.title = tool.label;
         if (!tool.eraser) button.style.background = tool.color;
         button.addEventListener('click', () => {

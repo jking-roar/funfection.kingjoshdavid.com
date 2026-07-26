@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Virus Hunt | Funfection</title>
+  <style>
+    :root {
+      --bg: #08111f;
+      --panel: rgba(13, 24, 43, 0.88);
+      --panel-border: rgba(119, 237, 255, 0.22);
+      --text: #e7fbff;
+      --muted: #9cb8c4;
+      --cyan: #63e6ff;
+      --green: #5dff9d;
+      --pink: #ff4fa3;
+      --orange: #ffb454;
+      --red: #ff5868;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 15%, rgba(99, 230, 255, 0.16), transparent 32rem),
+        radial-gradient(circle at 80% 10%, rgba(255, 79, 163, 0.13), transparent 28rem),
+        linear-gradient(145deg, #060a13 0%, var(--bg) 56%, #0b1729 100%);
+    }
+
+    header, main {
+      width: min(1100px, calc(100% - 2rem));
+      margin: 0 auto;
+    }
+
+    header { padding: 1.25rem 0 0; }
+
+    a { color: var(--cyan); font-weight: 800; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+      align-items: end;
+      padding: 1.25rem 0 1rem;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.4rem, 8vw, 5.8rem);
+      line-height: 0.86;
+      letter-spacing: -0.08em;
+      text-shadow: 0 0 28px rgba(99, 230, 255, 0.28);
+    }
+
+    .intro { color: var(--muted); max-width: 45rem; margin: 0.8rem 0 0; }
+
+    .score-card {
+      min-width: 12rem;
+      padding: 1rem;
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      background: var(--panel);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+    }
+
+    .score-label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.12em; }
+    #score { display: block; font-size: 2.6rem; font-weight: 900; color: var(--green); line-height: 1; }
+    #status { margin-top: 0.45rem; color: var(--orange); font-weight: 800; min-height: 1.3rem; }
+
+    .game-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 760px) minmax(240px, 1fr);
+      gap: 1rem;
+      align-items: start;
+      padding-bottom: 2rem;
+    }
+
+    .canvas-wrap, .instructions {
+      border: 1px solid var(--panel-border);
+      border-radius: 24px;
+      background: var(--panel);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+      overflow: hidden;
+    }
+
+    canvas {
+      aspect-ratio: 19 / 14;
+      display: block;
+      width: 100%;
+      height: auto;
+      image-rendering: pixelated;
+      background: #0a1424;
+      touch-action: none;
+    }
+
+    .instructions { padding: 1rem; }
+    .instructions h2 { margin: 0 0 0.6rem; }
+    .instructions ul { margin: 0; padding-left: 1.2rem; color: var(--muted); }
+    .instructions li { margin: 0.55rem 0; }
+    .key { color: var(--text); font-weight: 900; }
+    .restart {
+      width: 100%;
+      margin-top: 1rem;
+      border: 0;
+      border-radius: 14px;
+      padding: 0.9rem 1rem;
+      color: #07111f;
+      background: linear-gradient(135deg, var(--cyan), var(--green));
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .mobile-controls {
+      display: none;
+      grid-template-columns: repeat(3, minmax(3.8rem, 1fr));
+      gap: 0.55rem;
+      margin-top: 1rem;
+      touch-action: manipulation;
+      user-select: none;
+    }
+
+    .move-button {
+      min-height: 3.8rem;
+      border: 1px solid rgba(99, 230, 255, 0.34);
+      border-radius: 18px;
+      color: var(--text);
+      background: rgba(99, 230, 255, 0.13);
+      box-shadow: inset 0 0 18px rgba(99, 230, 255, 0.08);
+      font-size: 1.55rem;
+      font-weight: 900;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .move-button:active {
+      transform: translateY(1px) scale(0.98);
+      background: rgba(93, 255, 157, 0.22);
+    }
+
+    .move-up { grid-column: 2; }
+    .move-left { grid-column: 1; grid-row: 2; }
+    .move-down { grid-column: 2; grid-row: 2; }
+    .move-right { grid-column: 3; grid-row: 2; }
+
+    @media (max-width: 820px) {
+      header, main { width: min(100% - 1rem, 1100px); }
+      header { padding-top: 0.75rem; }
+      .hero { padding-top: 0.75rem; }
+      .hero, .game-shell { grid-template-columns: 1fr; }
+      h1 { font-size: clamp(2rem, 14vw, 4rem); }
+      .intro { font-size: 0.95rem; }
+      .score-card { min-width: 0; }
+      .canvas-wrap, .instructions { border-radius: 18px; }
+      .mobile-controls { display: grid; }
+    }
+
+    @media (pointer: coarse) {
+      .mobile-controls { display: grid; }
+    }
+  </style>
+</head>
+<body>
+  <header><a href="/">← Funfection home</a></header>
+  <main>
+    <section class="hero">
+      <div>
+        <h1>Virus Hunt</h1>
+        <p class="intro">Navigate a procedurally generated security grid. Collect glowing viruses, dodge patrolling firewall sentries, and route around walls with the arrow keys.</p>
+      </div>
+      <aside class="score-card" aria-live="polite">
+        <span class="score-label">Score</span>
+        <span id="score">0</span>
+        <div id="status">Find the viruses.</div>
+      </aside>
+    </section>
+
+    <section class="game-shell">
+      <div class="canvas-wrap">
+        <canvas id="game" width="760" height="560" aria-label="Top down virus collecting game"></canvas>
+      </div>
+      <aside class="instructions">
+        <h2>How to play</h2>
+        <ul>
+          <li>Use <span class="key">↑ ↓ ← →</span>, swipe on the board, or tap the on-screen controls to move one tile at a time.</li>
+          <li>Pick up every neon virus to increase your score.</li>
+          <li>Walls block movement. The world layout is generated fresh each run.</li>
+          <li>Red firewall sentries reset you to the start and cost one point if they catch you.</li>
+        </ul>
+        <div class="mobile-controls" aria-label="Touch movement controls">
+          <button class="move-button move-up" type="button" data-move="0,-1" aria-label="Move up">↑</button>
+          <button class="move-button move-left" type="button" data-move="-1,0" aria-label="Move left">←</button>
+          <button class="move-button move-down" type="button" data-move="0,1" aria-label="Move down">↓</button>
+          <button class="move-button move-right" type="button" data-move="1,0" aria-label="Move right">→</button>
+        </div>
+        <button class="restart" id="restart" type="button">Generate new world</button>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const statusEl = document.getElementById('status');
+    const restartButton = document.getElementById('restart');
+    const moveButtons = document.querySelectorAll('[data-move]');
+
+    const tile = 40;
+    const cols = Math.floor(canvas.width / tile);
+    const rows = Math.floor(canvas.height / tile);
+    const start = { x: 1, y: 1 };
+    let grid, player, viruses, firewalls, score, tick;
+
+    function randomFreeCell() {
+      let cell;
+      do {
+        cell = { x: Math.floor(Math.random() * (cols - 2)) + 1, y: Math.floor(Math.random() * (rows - 2)) + 1 };
+      } while (grid[cell.y][cell.x] || (cell.x === start.x && cell.y === start.y));
+      return cell;
+    }
+
+    function generateWorld() {
+      grid = Array.from({ length: rows }, (_, y) => Array.from({ length: cols }, (_, x) => x === 0 || y === 0 || x === cols - 1 || y === rows - 1));
+      for (let y = 1; y < rows - 1; y++) {
+        for (let x = 1; x < cols - 1; x++) {
+          if ((x === start.x && y === start.y) || (x === 2 && y === 1) || (x === 1 && y === 2)) continue;
+          grid[y][x] = Math.random() < 0.18;
+        }
+      }
+      player = { ...start };
+      viruses = Array.from({ length: 10 }, randomFreeCell);
+      firewalls = Array.from({ length: 5 }, () => ({ ...randomFreeCell(), dir: Math.random() < 0.5 ? 1 : -1, axis: Math.random() < 0.5 ? 'x' : 'y' }));
+      score = 0;
+      tick = 0;
+      updateHud('Fresh grid generated.');
+      draw();
+    }
+
+    function updateHud(message) {
+      scoreEl.textContent = score;
+      statusEl.textContent = message;
+    }
+
+    function movePlayer(dx, dy) {
+      const next = { x: player.x + dx, y: player.y + dy };
+      if (grid[next.y]?.[next.x]) {
+        updateHud('Wall blocked your route.');
+        return;
+      }
+      player = next;
+      const virusIndex = viruses.findIndex(v => v.x === player.x && v.y === player.y);
+      if (virusIndex >= 0) {
+        viruses.splice(virusIndex, 1);
+        score += 10;
+        updateHud(viruses.length ? `${viruses.length} viruses remain.` : 'Network cleaned! Generate another world.');
+      }
+      checkFirewallCollision();
+      draw();
+    }
+
+    function moveFirewalls() {
+      tick++;
+      if (tick % 12 !== 0) return;
+      for (const firewall of firewalls) {
+        const nx = firewall.x + (firewall.axis === 'x' ? firewall.dir : 0);
+        const ny = firewall.y + (firewall.axis === 'y' ? firewall.dir : 0);
+        if (grid[ny]?.[nx]) {
+          firewall.dir *= -1;
+        } else {
+          firewall.x = nx;
+          firewall.y = ny;
+        }
+      }
+      checkFirewallCollision();
+      draw();
+    }
+
+    function checkFirewallCollision() {
+      if (firewalls.some(f => f.x === player.x && f.y === player.y)) {
+        player = { ...start };
+        score = Math.max(0, score - 1);
+        updateHud('Firewall hit! Back to start.');
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          ctx.fillStyle = (x + y) % 2 ? '#0b1b30' : '#0d2038';
+          ctx.fillRect(x * tile, y * tile, tile, tile);
+          if (grid[y][x]) {
+            ctx.fillStyle = '#23324b';
+            ctx.fillRect(x * tile + 4, y * tile + 4, tile - 8, tile - 8);
+            ctx.strokeStyle = '#53657f';
+            ctx.strokeRect(x * tile + 8, y * tile + 8, tile - 16, tile - 16);
+          }
+        }
+      }
+      for (const virus of viruses) {
+        ctx.fillStyle = '#5dff9d';
+        ctx.beginPath();
+        ctx.arc(virus.x * tile + 20, virus.y * tile + 20, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#15351f';
+        ctx.fillRect(virus.x * tile + 16, virus.y * tile + 13, 4, 4);
+        ctx.fillRect(virus.x * tile + 23, virus.y * tile + 21, 4, 4);
+      }
+      for (const firewall of firewalls) {
+        ctx.fillStyle = '#ff5868';
+        ctx.fillRect(firewall.x * tile + 7, firewall.y * tile + 7, tile - 14, tile - 14);
+        ctx.fillStyle = '#ffb454';
+        ctx.fillRect(firewall.x * tile + 13, firewall.y * tile + 13, tile - 26, tile - 26);
+      }
+      ctx.fillStyle = '#63e6ff';
+      ctx.beginPath();
+      ctx.arc(player.x * tile + 20, player.y * tile + 20, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#07111f';
+      ctx.fillRect(player.x * tile + 15, player.y * tile + 15, 5, 5);
+      ctx.fillRect(player.x * tile + 23, player.y * tile + 15, 5, 5);
+    }
+
+    const keyMoves = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
+    let touchStart = null;
+
+    window.addEventListener('keydown', (event) => {
+      if (!keyMoves[event.key]) return;
+      event.preventDefault();
+      movePlayer(...keyMoves[event.key]);
+    });
+
+    moveButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const move = button.dataset.move.split(',').map(Number);
+        movePlayer(...move);
+      });
+    });
+
+    canvas.addEventListener('pointerdown', (event) => {
+      touchStart = { x: event.clientX, y: event.clientY };
+      canvas.setPointerCapture(event.pointerId);
+    });
+
+    canvas.addEventListener('pointerup', (event) => {
+      if (!touchStart) return;
+      const dx = event.clientX - touchStart.x;
+      const dy = event.clientY - touchStart.y;
+      touchStart = null;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        movePlayer(dx > 0 ? 1 : -1, 0);
+      } else {
+        movePlayer(0, dy > 0 ? 1 : -1);
+      }
+    });
+
+    canvas.addEventListener('pointercancel', () => {
+      touchStart = null;
+    });
+
+    restartButton.addEventListener('click', generateWorld);
+    generateWorld();
+    setInterval(moveFirewalls, 90);
+  </script>
+</body>
+</html>
