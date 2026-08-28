@@ -136,9 +136,11 @@
     @keyframes spin { to { transform: rotate(1turn); } }
 
     .canary-button {
+      --bird-scale: .72;
       position: relative;
       z-index: 2;
-      width: min(68%, 310px);
+      width: min(78%, 356px);
+      height: 350px;
       padding: 0;
       border: 0;
       background: transparent;
@@ -150,6 +152,14 @@
       will-change: transform;
     }
 
+    .bird-art {
+      display: block;
+      width: 100%;
+      transform: scale(var(--bird-scale));
+      transition: transform .2s ease-out;
+      transform-origin: 50% 58%;
+      will-change: transform;
+    }
     .canary-button svg { display: block; width: 100%; overflow: visible; filter: drop-shadow(0 15px 4px rgba(92, 60, 10, 0.16)); }
     .canary-button:hover { filter: brightness(1.025); }
     .canary-button:active { transform: scale(.96); }
@@ -159,6 +169,15 @@
     @keyframes bump { 50% { transform: scale(.94) rotate(-2deg); } }
     @keyframes rattle { 25% { transform: translateX(-7px) rotate(-3deg); } 65% { transform: translateX(7px) rotate(3deg); } }
     @keyframes panic { 25% { transform: translate(-9px, 2px) rotate(-4deg); } 50% { transform: translate(7px, -5px) rotate(4deg); } 75% { transform: translate(-5px, -2px) rotate(-2deg); } }
+
+    .expression { opacity: 0; transition: opacity .16s ease; }
+    .face-calm { opacity: 1; transition: opacity .16s ease; }
+    .stage[data-mood="uneasy"] .face-calm,
+    .stage[data-mood="worried"] .face-calm,
+    .stage[data-mood="panic"] .face-calm { opacity: 0; }
+    .stage[data-mood="uneasy"] .face-uneasy,
+    .stage[data-mood="worried"] .face-worried,
+    .stage[data-mood="panic"] .face-panic { opacity: 1; }
 
     .hint { position: relative; z-index: 2; margin: 1.2rem 0 0; font-size: 1.05rem; font-weight: 900; text-align: center; }
     .hint small { display: block; margin-top: .35rem; color: #766a58; font-weight: 650; }
@@ -183,8 +202,10 @@
       h1 { max-width: none; font-size: clamp(3.4rem, 19vw, 6rem); }
       .lede { margin: 1.2rem 0; }
       .rules { display: none; }
-      .game-card { min-height: 590px; border-radius: 28px; }
-      .stage { min-height: 420px; }
+      .game-card { min-height: 535px; border-radius: 28px; }
+      .stage { min-height: 450px; padding: 1.25rem 1rem .75rem; overflow: hidden; }
+      .canary-button { width: min(82vw, 320px); height: 350px; }
+      .hint { margin-top: 0; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -211,10 +232,10 @@
         <div><span class="label">This round</span><span class="value"><span id="taps">0</span> taps</span></div>
         <div id="streak"><span class="label">Tempo</span><span class="value" id="tempo">Warming up</span></div>
       </div>
-      <div class="stage" id="stage">
+      <div class="stage" id="stage" data-mood="calm">
         <div class="sunburst" aria-hidden="true"></div>
         <button class="canary-button" id="canary" type="button" aria-label="Tap the canary" aria-describedby="game-hint">
-          <svg viewBox="0 0 320 350" role="img" aria-label="A cheerful yellow canary">
+          <span class="bird-art"><svg viewBox="0 0 320 350" role="img" aria-label="A yellow canary whose expression changes as it gets closer to exploding">
             <path d="M89 315c34-16 94-17 138 1" fill="none" stroke="#252018" stroke-width="9" stroke-linecap="round"/>
             <path d="M122 301l-17 24m72-25 19 24" fill="none" stroke="#bb6c24" stroke-width="10" stroke-linecap="round"/>
             <path d="M85 166C42 140 26 170 50 202c13 18 32 26 56 20" fill="#f4b825" stroke="#252018" stroke-width="7" stroke-linejoin="round"/>
@@ -223,12 +244,25 @@
             <path d="M91 224c8 51 37 82 74 84-32-29-29-65-18-96-21 24-39 25-56 12Z" fill="#f0b621" opacity=".85"/>
             <circle cx="163" cy="104" r="74" fill="#ffe356" stroke="#252018" stroke-width="8"/>
             <path d="M126 40c7-22 18-28 30-29-4 12-2 19 3 27 8-22 22-29 34-28-8 12-10 22-5 34" fill="#ffd83d" stroke="#252018" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="135" cy="94" r="10" fill="#252018"/><circle cx="190" cy="94" r="10" fill="#252018"/>
-            <circle cx="132" cy="90" r="3" fill="white"/><circle cx="187" cy="90" r="3" fill="white"/>
+            <g class="face-calm">
+              <circle cx="135" cy="94" r="10" fill="#252018"/><circle cx="190" cy="94" r="10" fill="#252018"/>
+              <circle cx="132" cy="90" r="3" fill="white"/><circle cx="187" cy="90" r="3" fill="white"/>
+            </g>
             <path d="M149 113l15-12 18 13-17 13Z" fill="#ff8a2a" stroke="#252018" stroke-width="5" stroke-linejoin="round"/>
-            <path d="M132 136c18 12 41 12 60-1" fill="none" stroke="#d38e28" stroke-width="5" stroke-linecap="round"/>
+            <path class="face-calm" d="M132 136c18 12 41 12 60-1" fill="none" stroke="#d38e28" stroke-width="5" stroke-linecap="round"/>
+            <g class="expression face-uneasy" fill="none" stroke="#252018" stroke-width="7" stroke-linecap="round">
+              <path d="M125 94q10-8 20 0m35 0q10-8 20 0"/><path d="M145 142q18-10 36 0" stroke="#d38e28" stroke-width="5"/>
+            </g>
+            <g class="expression face-worried" fill="none" stroke="#252018" stroke-width="7" stroke-linecap="round">
+              <path d="M123 80l23 8m33 0 23-8"/><ellipse cx="135" cy="101" rx="8" ry="12" fill="#252018"/><ellipse cx="190" cy="101" rx="8" ry="12" fill="#252018"/>
+              <ellipse cx="164" cy="143" rx="13" ry="10" fill="#a94a25" stroke-width="5"/>
+            </g>
+            <g class="expression face-panic" fill="none" stroke="#252018" stroke-width="7" stroke-linecap="round">
+              <path d="M122 78l25 10m31 0 25-10"/><circle cx="135" cy="102" r="12" fill="white"/><circle cx="190" cy="102" r="12" fill="white"/><circle cx="135" cy="104" r="5" fill="#252018"/><circle cx="190" cy="104" r="5" fill="#252018"/>
+              <ellipse cx="164" cy="144" rx="17" ry="20" fill="#8d331e"/>
+            </g>
             <circle cx="111" cy="119" r="10" fill="#ff9a53" opacity=".5"/><circle cx="214" cy="119" r="10" fill="#ff9a53" opacity=".5"/>
-          </svg>
+          </svg></span>
         </button>
         <p class="hint" id="game-hint">Tap the canary!<small id="status" aria-live="polite">It looks suspiciously calm.</small></p>
       </div>
@@ -278,11 +312,12 @@
 
     function updateVisuals() {
       const ratio = Math.min(pressure / threshold, 1);
+      canary.style.setProperty('--bird-scale', Math.min(.72 + ratio * .28, 1));
+      stage.dataset.mood = ratio > .82 ? 'panic' : ratio > .58 ? 'worried' : ratio > .28 ? 'uneasy' : 'calm';
       const displayPercent = Math.round(ratio * 100);
       meterFill.style.width = `${displayPercent}%`;
       potentialEl.textContent = `${displayPercent}%`;
       meter.setAttribute('aria-valuenow', displayPercent);
-      canary.style.width = `${Math.min(68 + ratio * 18, 86)}%`;
     }
 
     function tapBird() {
