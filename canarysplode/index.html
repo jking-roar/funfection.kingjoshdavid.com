@@ -182,6 +182,11 @@
     .hint { position: relative; z-index: 2; margin: 1.2rem 0 0; font-size: 1.05rem; font-weight: 900; text-align: center; }
     .hint small { display: block; margin-top: .35rem; color: #766a58; font-weight: 650; }
 
+    .meter-wrap { padding: 0 1.5rem 1.5rem; }
+    .meter-head { display: flex; justify-content: space-between; margin-bottom: .5rem; color: #766a58; font-size: .7rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+    .meter { height: 15px; overflow: hidden; border: 2px solid var(--ink); border-radius: 99px; background: #ded5c1; }
+    .meter-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #ffd83d 0%, #ff8a2a 65%, #ee4b2b 100%); transition: width .18s ease-out; }
+
     .overlay { position: absolute; z-index: 5; inset: 0; display: grid; place-content: center; padding: 2rem; text-align: center; background: rgba(255, 249, 232, .9); opacity: 0; visibility: hidden; transition: opacity .25s; }
     .overlay.show { opacity: 1; visibility: visible; }
     .boom { margin: 0; color: var(--red); font-size: clamp(4rem, 13vw, 8rem); line-height: .8; letter-spacing: -.08em; text-transform: uppercase; transform: rotate(-6deg); text-shadow: 5px 5px 0 var(--yellow); }
@@ -261,6 +266,10 @@
         </button>
         <p class="hint" id="game-hint">Tap the canary!<small id="status" aria-live="polite">It looks suspiciously calm.</small></p>
       </div>
+      <div class="meter-wrap">
+        <div class="meter-head"><span>Boom potential</span><span id="potential">0%</span></div>
+        <div class="meter" role="progressbar" aria-label="Explosion potential" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="meter-fill" id="meter-fill"></div></div>
+      </div>
       <div class="overlay" id="overlay" aria-hidden="true">
         <p class="boom">Ka-boom!</p>
         <p class="result" id="result">That canary lasted 0 taps.</p>
@@ -275,6 +284,9 @@
     const tapsEl = document.getElementById('taps');
     const tempoEl = document.getElementById('tempo');
     const statusEl = document.getElementById('status');
+    const potentialEl = document.getElementById('potential');
+    const meterFill = document.getElementById('meter-fill');
+    const meter = document.querySelector('.meter');
     const overlay = document.getElementById('overlay');
     const resultEl = document.getElementById('result');
     const again = document.getElementById('again');
@@ -302,6 +314,10 @@
       const ratio = Math.min(pressure / threshold, 1);
       canary.style.setProperty('--bird-scale', Math.min(.72 + ratio * .28, 1));
       stage.dataset.mood = ratio > .82 ? 'panic' : ratio > .58 ? 'worried' : ratio > .28 ? 'uneasy' : 'calm';
+      const displayPercent = Math.round(ratio * 100);
+      meterFill.style.width = `${displayPercent}%`;
+      potentialEl.textContent = `${displayPercent}%`;
+      meter.setAttribute('aria-valuenow', displayPercent);
     }
 
     function tapBird() {
