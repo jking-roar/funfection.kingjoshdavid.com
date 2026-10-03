@@ -34,3 +34,19 @@ This site also serves an in-browser tile image maker at:
 - `https://funfection.kingjoshdavid.com/tiles/`
 
 The page provides a configurable square pixel tile canvas, color palette with eraser and clear-all tools, adjustable repeated previews, edit mirroring across horizontal/vertical axes, and torus or Möbius-style repeat previews.
+
+### Tile behavior tests
+
+Run with Node.js 18 or newer; no packages or installation are required:
+
+```bash
+node --test tests/tiles.test.cjs
+```
+
+The tests execute the inline script from `tiles/index.html` in an isolated VM
+with a small DOM/canvas harness. They cover mirroring, torus and Möbius seam
+parity, topology labels and canvas transforms, palette/custom colors and
+`aria-pressed`, erasing and Clear all, resize preservation, preview counts,
+pointer events and coordinate mapping, and animation-frame render batching.
+Canvas calls and event handlers are tested; browser rasterization, native
+pointer capture, and visual layout still require a browser check.
