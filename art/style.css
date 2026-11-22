@@ -2,3 +2,5 @@
 
 /* Half the original width and height gives one quarter of the display area. */
 .specimens{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}.current{min-width:0}#art{background:transparent;border-radius:50%;box-shadow:none}.caption{display:block}.caption span{display:block;margin-top:6px}.history-panel h2{font-size:14px;margin:0}.history-panel p{font-size:11px;color:#667487;margin:4px 0 12px}#history{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-height:480px;overflow:auto;padding:4px}.history-item{padding:0;border:2px solid transparent;background:transparent;margin:0;border-radius:50%;aspect-ratio:1}.history-item:hover{background:transparent;border-color:#9aa9c0}.history-item[aria-pressed="true"]{border-color:#243fdf}.history-item svg{display:block;width:100%;height:100%;border-radius:50%}#seed-help{display:block;margin-top:5px}@media(max-width:420px){.specimens{gap:14px}#history{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}}
+
+.image-actions{display:flex;flex-direction:column;gap:8px;margin-top:4px}.image-actions button{margin-top:0}
