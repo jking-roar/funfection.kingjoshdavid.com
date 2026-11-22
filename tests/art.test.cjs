@@ -94,3 +94,35 @@ test('glass presentation varies by virus and seed, and restores exactly',()=>{
  assert.equal(outputs.size,25);
  assert.doesNotMatch(render(base,catalog),/plate-glass/,'presentation must not enter exports');
 });
+test('default icon scale doubles each motif without changing its anchor or crop',()=>{
+ const {config,cropPath}=globalThis.FunfectionArt,original=config.iconScale;
+ const categoryLayer=(svg,key)=>{const start=svg.indexOf('<g data-layer="'+key+'"');const next=svg.indexOf('<g data-layer="',start+1);return svg.slice(start,next<0?svg.lastIndexOf('</g></svg>'):next);};
+ try{
+  config.iconScale=1;const a=render(base,catalog);
+  config.iconScale=2;const b=render(base,catalog);
+  for(const key of ['prefix','family','suffix']){
+   const first=categoryLayer(a,key).match(/transform="translate\(([^)]+)\) rotate\(([^)]+)\) scale\(([^)]+)\)"/);
+   const second=categoryLayer(b,key).match(/transform="translate\(([^)]+)\) rotate\(([^)]+)\) scale\(([^)]+)\)"/);
+   assert.equal(first[1],second[1]);assert.equal(first[2],second[2]);
+   assert.ok(Math.abs(Number(second[3])-2*Number(first[3]))<=.011);
+  }
+  assert.ok(a.includes(cropPath(base.seed))&&b.includes(cropPath(base.seed)));
+  for(const family of ['Lattice','Nexus'])assert.match(render({...base,family},catalog),/data-icon-scale="2"/);
+ }finally{config.iconScale=original;}
+});
+test('every named category accepts a scale override that replaces the shared default',()=>{
+ const {config,iconScale}=globalThis.FunfectionArt;
+ for(const key of Object.keys(catalog))for(const name of catalog[key]){
+  try{
+   config.categories[key][name]=1.25;
+   assert.equal(iconScale(key,name),1.25);
+   const svg=render({...base,[key]:name},catalog);assert.doesNotMatch(svg,/NaN|Infinity|undefined/);
+  }finally{delete config.categories[key][name];}
+  assert.equal(iconScale(key,name),2);
+ }
+});
+test('invalid scale overrides are rejected',()=>{
+ const {config,iconScale}=globalThis.FunfectionArt;
+ try{for(const v of [0,-1,Infinity,NaN,'2']){config.categories.family.Spark=v;assert.throws(()=>iconScale('family','Spark'),/positive finite/);}}
+ finally{delete config.categories.family.Spark;}
+});
