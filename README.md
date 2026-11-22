@@ -71,3 +71,20 @@ Art Lab displays circular specimens at half the original width and height (one q
 Examples: Frosty adds blue frost crystals; Amber adds amber resin inclusions; Bramble draws thorny branches; Gyoza draws pleated dumplings; Xebec draws three-masted ships; Crackle adds fractures; Unzip adds zipper teeth. The mappings are artistic interpretations, including coined names whose meanings are open-ended.
 
 Each category has an independent random stream derived from its own name and the seed. Changing a suffix preserves family geometry and prefix texture. Changing a prefix recolors the family and suffix while preserving their geometry. Editing the seed varies all three layers. Version 2 intentionally replaces version 1's index-based recipes: existing URLs retain their selections but render the new semantic artwork. Circular clipping, transparent exports, and session history remain in place.
+
+### Icon scale configuration
+
+Edit `art/config.js` to change `iconScale` (default `2`, twice the original linear size). The `categories.prefix`, `categories.family`, and `categories.suffix` maps accept an override for **any exact category name**, replacing the default:
+
+```js
+const config = {
+  iconScale: 2,
+  categories: {
+    prefix: { Frosty: 3 },
+    family: { Lattice: 1.5, Gyoza: 2.5 },
+    suffix: { Crackle: 1 }
+  }
+};
+```
+
+All values must be positive finite numbers. `1` restores original dimensions, `2` doubles width and height (four times area). Repeated motifs scale around their own centers, retaining seed-based placement. The Lattice and Nexus structures scale as complete compositions around the specimen center. Strokes scale with the shapes. The crop, specimen background, microscope slide, and export dimensions are unaffected. Changing the shared configuration changes rendering for existing recipe URLs. Bump the asset version when deploying config changes.

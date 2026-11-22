@@ -2,6 +2,12 @@
 (function(root){
 'use strict';
 const traits=root.FunfectionTraits||(typeof require==='function'?require('./traits.js'):null);
+const config=root.FunfectionArtConfig||(typeof require==='function'?require('./config.js'):null);
+function iconScale(category,name){
+ const value=config.categories?.[category]?.[name]??config.iconScale;
+ if(typeof value!=='number'||!Number.isFinite(value)||value<=0)throw Error('Icon scale must be a positive finite number: '+category+'/'+name);
+ return value;
+}
 function hash(text){let h=2166136261;for(const c of text)h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0;}
 function random(seed){let a=hash(seed);return()=>{a+=0x6D2B79F5;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
@@ -18,9 +24,11 @@ function tools(bits){
  return {path,circle,line,rect,star,spiral,leaf};
 }
 function familyLayer(name,seed,palette){
- const [kind,count,scale,param]=traits.families[name];const {bits,n}=layer('family:'+name+':'+seed);const {path,circle,line,rect,star,spiral,leaf}=tools(bits);
+ const [kind,count,scale,param]=traits.families[name],iconSize=iconScale('family',name);const {bits,n}=layer('family:'+name+':'+seed);const {path,circle,line,rect,star,spiral,leaf}=tools(bits);
  bits.push(`<g data-layer="family" data-trait="${esc(name)}" stroke-linecap="round" stroke-linejoin="round">`);
  // Global structures have their own composition instead of repeating a small symbol.
+ const globalStructure=kind==='lattice'||kind==='network';
+ if(globalStructure)bits.push(`<g data-icon-scale="${iconSize}" transform="translate(400 400) scale(${iconSize}) translate(-400 -400)">`);
  if(kind==='lattice'){
   const rotation=n(0,180),size=n(.65,1.2),spacing=n(32,72),missing=n(.08,.32);
   const cells=Math.floor(540/spacing),half=cells*spacing/2;
@@ -42,7 +50,7 @@ function familyLayer(name,seed,palette){
  for(let i=0;i<count;i++){
   const angle=n(0,Math.PI*2),radius=Math.sqrt(n(0,1))*255,x=400+Math.cos(angle)*radius,y=400+Math.sin(angle)*radius,s=scale*n(.65,1.25),color=palette[i%palette.length];
   const rotation=['rain','icicle','tower','book','harp','ship','hyrax','ibex','face','uvula','dumpling','yolk','notes','horizon','valley','fjord'].includes(kind)?n(-12,12):n(-180,180);
-  bits.push(`<g transform="translate(${fmt(x)} ${fmt(y)}) rotate(${fmt(rotation)}) scale(${fmt(s/50)})" color="${color}">`);
+  bits.push(`<g transform="translate(${fmt(x)} ${fmt(y)}) rotate(${fmt(rotation)}) scale(${fmt(s/50*iconSize)})" color="${color}">`);
   switch(kind){
    case 'spark':star(45,param,.17);for(let k=0;k<3;k++)line(0,-30,k*13-12,-54);break;
    case 'echo':for(let k=0;k<5;k++)circle(k*5,0,10+k*10,'none','currentColor',2,1-k*.15);break;
@@ -104,15 +112,16 @@ function familyLayer(name,seed,palette){
   bits.push('</g>');
  }
  }
+ if(globalStructure)bits.push('</g>');
  bits.push('</g>');return bits.join('');
 }
 function textureLayer(name,seed,palette){
- const kind=traits.prefixes[name][2],{bits,n}=layer('prefix:'+name+':'+seed),{path,circle,line,rect,star,spiral,leaf}=tools(bits);
+ const kind=traits.prefixes[name][2],iconSize=iconScale('prefix',name),{bits,n}=layer('prefix:'+name+':'+seed),{path,circle,line,rect,star,spiral,leaf}=tools(bits);
  const soft=['nap','haze','mist','murk','quiet'].includes(kind);
  const count=kind==='quiet'?15:kind==='noise'?320:soft?23:65;
  bits.push(`<g data-layer="prefix" data-trait="${esc(name)}" stroke-linecap="round" stroke-linejoin="round" opacity="${soft?.22:.45}">`);
  for(let i=0;i<count;i++){
-  const x=n(30,770),y=n(30,770),r=n(5,18),c=palette[i%palette.length];bits.push(`<g transform="translate(${fmt(x)} ${fmt(y)}) rotate(${fmt(n(-30,30))})" color="${c}">`);
+  const x=n(30,770),y=n(30,770),r=n(5,18),c=palette[i%palette.length];bits.push(`<g transform="translate(${fmt(x)} ${fmt(y)}) rotate(${fmt(n(-30,30))}) scale(${iconSize})" color="${c}">`);
   switch(kind){
    case 'glow':circle(0,0,r,'none','currentColor',6,.13);circle(0,0,r,'none','currentColor',1);break;
    case 'nap':case 'fur':for(let k=0;k<9;k++)path(`M${k-4} 8q${n(-5,5)} -10 ${n(-8,8)} -19`,'none','currentColor',kind==='nap'?.6:1.4);break;
@@ -164,12 +173,12 @@ function textureLayer(name,seed,palette){
  bits.push('</g>');return bits.join('');
 }
 function suffixLayer(name,seed,palette){
- const [kind,count,scale]=traits.suffixes[name],{bits,n}=layer('suffix:'+name+':'+seed),{path,circle,line,rect,star,spiral}=tools(bits);
+ const [kind,count,scale]=traits.suffixes[name],iconSize=iconScale('suffix',name),{bits,n}=layer('suffix:'+name+':'+seed),{path,circle,line,rect,star,spiral}=tools(bits);
  bits.push(`<g data-layer="suffix" data-trait="${esc(name)}" stroke-linecap="round" stroke-linejoin="round" opacity="0.78">`);
  const bubble=(x=0,y=0,r=17)=>{circle(x,y,r,'none','currentColor',1.5);path(`M${x-r/2} ${y+r*.8}l-5 10 13 -7`);};
  const sound=(r=20)=>{for(let k=0;k<3;k++)path(`M${k*9} -${r+k*5}Q${r+k*18} 0 ${k*9} ${r+k*5}`);};
  for(let i=0;i<count;i++){
-  const x=n(65,735),y=n(65,735),size=scale*n(.7,1.2);bits.push(`<g transform="translate(${fmt(x)} ${fmt(y)}) rotate(${fmt(n(-40,40))}) scale(${fmt(size/35)})" color="${palette[(i+1)%palette.length]}">`);
+  const x=n(65,735),y=n(65,735),size=scale*n(.7,1.2);bits.push(`<g transform="translate(${fmt(x)} ${fmt(y)}) rotate(${fmt(n(-40,40))}) scale(${fmt(size/35*iconSize)})" color="${palette[(i+1)%palette.length]}">`);
   switch(kind){
    case 'sneeze':for(let k=0;k<11;k++){const a=n(-.65,.65),r=n(8,50);circle(Math.cos(a)*r,Math.sin(a)*r,n(1,3),'currentColor','none');}path('M-8 -6L0 0 -8 6');break;
    case 'wave':path('M-45 0q12 -25 24 0t24 0t24 0');break;
@@ -255,6 +264,6 @@ function render(recipe,catalog){
  const title=[prefix,family,suffix].join(' ');
  return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 800 800"><title>${esc(title)}</title><desc>Funfection Art Lab. Semantic recipe version 2. Seed: ${esc(seed)}. ${esc(traits.prefixes[prefix][3])}; ${esc(traits.families[family][4])}; ${esc(traits.suffixes[suffix][3])}.</desc><defs><clipPath id="art-crop"><path d="${cropPath(seed)}"/></clipPath></defs><g clip-path="url(#art-crop)"><rect width="800" height="800" fill="${bg}"/>${textureLayer(prefix,seed,palette)}${familyLayer(family,seed,palette)}${suffixLayer(suffix,seed,palette)}</g></svg>`;
 }
-root.FunfectionArt={render,hash,traits,cropPath,cropParameters};
+root.FunfectionArt={render,hash,traits,cropPath,cropParameters,iconScale,config};
 if(typeof module!=='undefined')module.exports=root.FunfectionArt;
 })(globalThis);
