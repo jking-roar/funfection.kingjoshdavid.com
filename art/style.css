@@ -11,3 +11,8 @@
 .microscope-slide::after{content:"";position:absolute;inset:0;background:linear-gradient(118deg,transparent 28%,#ffffff70 29%,#ffffff15 39%,transparent 40%);pointer-events:none;border-radius:inherit}
 .slide-label{position:absolute;top:8px;left:10px;font:7px/1.2 ui-monospace,monospace;letter-spacing:.12em;color:#607b8a}.slide-scale{position:absolute;bottom:12px;right:13px;width:42px;height:5px;border:1px solid #607b8a;border-top:0;background:repeating-linear-gradient(90deg,transparent 0 6px,#607b8a 6px 7px)}
 #art,#art svg,.history-item svg{border-radius:0}.history-item{border-radius:8px}
+
+/* The seeded glass SVG replaces the fixed coverslip and reflection. */
+.microscope-slide{background:transparent;border:0;box-shadow:0 4px 14px #17384616}
+.microscope-slide::before,.microscope-slide::after{content:none}
+.plate-overlay{position:absolute;inset:0;pointer-events:none;z-index:0}.plate-overlay svg{display:block;width:100%;height:100%}.microscope-slide #art{position:relative;z-index:1}

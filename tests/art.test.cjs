@@ -11,10 +11,10 @@ test('all category values render finite SVG',()=>{for(const key of Object.keys(c
 test('untrusted seed text is escaped and unknown categories rejected',()=>{assert.doesNotMatch(render({...base,seed:'</desc><script>alert(1)</script>'},catalog),/<script>/);assert.throws(()=>render({...base,family:'fake'},catalog));});
 test('page restores recipe, edits, randomizes, shares, and exports',async()=>{
  const vm=require('node:vm'),{webcrypto}=require('node:crypto');
- const nodes={};for(const id of ['prefix','family','suffix','seed','recipe','art','name','edition','status','random','variation','svg','png','share','history','traits-info'])nodes[id]={children:[],replaceChildren(){this.children=[];},append(node){this.children.push(node);},value:'',add(){},addEventListener(k,fn){this[k]=fn;},setAttribute(){}};
+ const nodes={};for(const id of ['prefix','family','suffix','seed','recipe','art','name','edition','status','random','variation','svg','png','share','history','traits-info','plate-overlay'])nodes[id]={children:[],replaceChildren(){this.children=[];},append(node){this.children.push(node);},value:'',add(){},addEventListener(k,fn){this[k]=fn;},setAttribute(){}};
  const downloads=[],blobs=[];let copied='';let current=new URL('https://example.com/art/?prefix=Neon&family=Bloom&suffix=Wiggle&seed=example');
  class FakeImage{async decode(){}}
-const context={FunfectionCatalog:catalog,FunfectionArt:globalThis.FunfectionArt,FunfectionTraits:globalThis.FunfectionTraits,URL:class extends URL{static createObjectURL(blob){blobs.push(blob);return 'blob:example';}static revokeObjectURL(){}},URLSearchParams,crypto:webcrypto,Uint32Array,Option:class{},Blob,Image:FakeImage,Path2D:class{constructor(d){this.d=d;}},Math,setTimeout(){},location:{search:current.search,href:current.href},history:{replaceState(a,b,url){current=url;}},navigator:{clipboard:{async writeText(text){copied=text;}}},document:{getElementById:id=>nodes[id],createElement(tag){return tag==='button'?{setAttribute(k,v){this[k]=v;}}:tag==='a'?{click(){downloads.push(this.download);}}:{getContext(){return{scale(x,y){assert.deepEqual([x,y],[2,2]);},clip(path){assert.equal(path.d,globalThis.FunfectionArt.cropPath(nodes.seed.value));},drawImage(img,x,y,w,h){assert.deepEqual([x,y,w,h],[0,0,800,800]);}};},toBlob(fn){fn(new Blob(['png'],{type:'image/png'}));}};}}};
+const context={FunfectionPlate:require('../art/plate.js'),FunfectionCatalog:catalog,FunfectionArt:globalThis.FunfectionArt,FunfectionTraits:globalThis.FunfectionTraits,URL:class extends URL{static createObjectURL(blob){blobs.push(blob);return 'blob:example';}static revokeObjectURL(){}},URLSearchParams,crypto:webcrypto,Uint32Array,Option:class{},Blob,Image:FakeImage,Path2D:class{constructor(d){this.d=d;}},Math,setTimeout(){},location:{search:current.search,href:current.href},history:{replaceState(a,b,url){current=url;}},navigator:{clipboard:{async writeText(text){copied=text;}}},document:{getElementById:id=>nodes[id],createElement(tag){return tag==='button'?{setAttribute(k,v){this[k]=v;}}:tag==='a'?{click(){downloads.push(this.download);}}:{getContext(){return{scale(x,y){assert.deepEqual([x,y],[2,2]);},clip(path){assert.equal(path.d,globalThis.FunfectionArt.cropPath(nodes.seed.value));},drawImage(img,x,y,w,h){assert.deepEqual([x,y,w,h],[0,0,800,800]);}};},toBlob(fn){fn(new Blob(['png'],{type:'image/png'}));}};}}};
  vm.runInNewContext(fs.readFileSync(require.resolve('../art/app.js'),'utf8'),context);
  assert.equal(nodes.name.textContent,'Neon Bloom Wiggle');assert.equal(nodes.seed.value,'example');assert.match(nodes.art.innerHTML,/<svg/);
  const first=nodes.art.innerHTML;
@@ -84,4 +84,13 @@ test('Lattice seed controls angle, size, spacing, and omitted mesh edges',()=>{
  assert.equal(new Set(meshes).size,3);
  const transforms=meshes.map(m=>m.match(/transform="([^"]+)"/)[1]);
  assert.equal(new Set(transforms).size,3);
+});
+
+test('glass presentation varies by virus and seed, and restores exactly',()=>{
+ const {render:plate}=require('../art/plate.js');
+ assert.equal(plate(base),plate({...base}));
+ for(const key of ['prefix','family','suffix','seed'])assert.notEqual(plate(base),plate({...base,[key]:base[key]+'other'}));
+ const outputs=new Set();for(let i=0;i<25;i++){const svg=plate({...base,seed:String(i)});assert.doesNotMatch(svg,/NaN|undefined|Infinity/);outputs.add(svg);}
+ assert.equal(outputs.size,25);
+ assert.doesNotMatch(render(base,catalog),/plate-glass/,'presentation must not enter exports');
 });
