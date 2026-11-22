@@ -56,10 +56,18 @@ pointer capture, and visual layout still require a browser check.
 
 `/art/` makes deterministic abstract SVG artwork from the Funfection prefix, family, and suffix categories. Select any category, generate a random recipe or a new seed variation, copy a repeatable recipe URL, or export SVG / 1600 × 1600 PNG. Everything runs locally in the browser with no API keys or external dependencies.
 
-The catalog is a snapshot of the display names from `jking-roar/infection` at commit `6826faa230564528f8c2e7c20699c4f72b5aec88`, under `app/src/main/java/com/kingjoshdavid/funfection/model/viral/enums/{Prefix,Family,Suffix}.java`. Enum order is significant to the renderer. Prefix controls palette/texture; family controls topology, density, and geometry; suffix controls gesture marks. These are new art interpretations, not visuals copied from the Android app. Recipe rendering is version 1; preserve it to keep existing links reproducible.
+The catalog is a snapshot of the display names from `jking-roar/infection` at commit `6826faa230564528f8c2e7c20699c4f72b5aec88`, under `app/src/main/java/com/kingjoshdavid/funfection/model/viral/enums/{Prefix,Family,Suffix}.java`. Enum order is preserved for the dropdowns. Prefix controls palette/texture; family controls topology, density, and geometry; suffix controls gesture marks. These are new art interpretations, not visuals copied from the Android app. Recipe rendering now uses semantic version 2; see below.
 
 To update categories, update the three JSON snapshots and `art/catalog.js` together, preserving existing order. Keep private repository access out of the browser.
 
 Run art checks with `node --test tests/art.test.cjs`.
 
 Art Lab displays circular specimens at half the original width and height (one quarter of the area). SVG clipping is embedded in the artwork so both SVG and PNG downloads have transparent pixels outside the circle; the background inside the circle remains part of the recipe. Export resolutions remain 1200 × 1200 SVG / 1600 × 1600 PNG. Session history beside the current specimen keeps the latest 60 distinct recipes, including live seed edits, and clicking a thumbnail restores its controls and download content. Seed changes apply on every input event, not blur. History resets on page reload; copied recipe links remain repeatable.
+
+### Semantic art recipes (version 2)
+
+`art/traits.js` explicitly defines every prefix, family, and suffix by name. Prefixes choose a named palette and surface treatment; families choose meaningful motifs and composition; suffixes add their own distinct gestures. The current interpretation is shown below the artwork. No visual mappings use enum indices, so reordering categories does not change their behavior.
+
+Examples: Frosty adds blue frost crystals; Amber adds amber resin inclusions; Bramble draws thorny branches; Gyoza draws pleated dumplings; Xebec draws three-masted ships; Crackle adds fractures; Unzip adds zipper teeth. The mappings are artistic interpretations, including coined names whose meanings are open-ended.
+
+Each category has an independent random stream derived from its own name and the seed. Changing a suffix preserves family geometry and prefix texture. Changing a prefix recolors the family and suffix while preserving their geometry. Editing the seed varies all three layers. Version 2 intentionally replaces version 1's index-based recipes: existing URLs retain their selections but render the new semantic artwork. Circular clipping, transparent exports, and session history remain in place.
