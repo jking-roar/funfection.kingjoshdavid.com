@@ -13,7 +13,7 @@ function render(recipe,catalog){
  const hue=(p*137.508)%360,sat=48+(p%5)*10,light=35+(p%4)*7;
  const color=i=>`hsl(${fmt((hue+i*(30+p%4*25))%360)} ${sat}% ${Math.min(72,light+i*8)}%)`;
  const bg=p%3===0?'#101b2e':'#ffffff',ink=p%3===0?'#eef3ff':'#16283a';
- const bits=[`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 800 800"><title>${esc(prefix+' '+family+' '+suffix)}</title><desc>Funfection Art Lab. Seed: ${esc(seed)}. Recipe version 1.</desc><rect width="800" height="800" fill="${bg}"/>`];
+ const bits=[`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 800 800"><title>${esc(prefix+' '+family+' '+suffix)}</title><desc>Funfection Art Lab. Seed: ${esc(seed)}. Recipe version 1.</desc><defs><clipPath id="art-crop"><circle cx="400" cy="400" r="400"/></clipPath></defs><g clip-path="url(#art-crop)"><rect width="800" height="800" fill="${bg}"/>`];
  const circle=(x,y,r,fill,stroke='none',w=1)=>bits.push(`<circle cx="${fmt(x)}" cy="${fmt(y)}" r="${fmt(r)}" fill="${fill}" stroke="${stroke}" stroke-width="${w}"/>`);
  const path=(d,stroke,sw=2,fill='none')=>bits.push(`<path d="${d}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/>`);
  // Family controls topology; each index also changes density, rhythm, and geometry.
@@ -47,7 +47,7 @@ function render(recipe,catalog){
    case 5:path(`M${fmt(x)} ${fmt(y)}l${length} -${length}m-${length} 0l${length} ${length}`,c,2);break;
   }
  }
- bits.push('</g></svg>');return bits.join('');
+ bits.push('</g></g></svg>');return bits.join('');
 }
 root.FunfectionArt={render,hash};
 if(typeof module!=='undefined')module.exports=root.FunfectionArt;

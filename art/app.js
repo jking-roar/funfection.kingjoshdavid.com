@@ -12,9 +12,32 @@ fields.seed.value=(params.get('seed')||newSeed()).slice(0,80);
 fields.seed.addEventListener('input',draw);
 document.getElementById('recipe').addEventListener('submit',e=>e.preventDefault());
 let svgText='',recipe;
+const specimens=[];
+const historyPanel=document.getElementById('history');
+function showHistory(){
+ historyPanel.replaceChildren();
+ const active=JSON.stringify(recipe);
+ for(const specimen of specimens){
+  const button=document.createElement('button');
+  button.type='button';button.className='history-item';
+  const label=[specimen.prefix,specimen.family,specimen.suffix].join(' ')+' · seed '+specimen.seed;
+  button.title=label;button.setAttribute('aria-label','Restore '+label);
+  button.setAttribute('aria-pressed',String(JSON.stringify(specimen)===active));
+  // Keep clip-path IDs unique across the current artwork and all thumbnails.
+  button.innerHTML=FunfectionArt.render(specimen,catalog).replaceAll('art-crop','history-crop-'+specimens.indexOf(specimen));
+  button.onclick=()=>{for(const k of Object.keys(fields))fields[k].value=specimen[k];draw();};
+  historyPanel.append(button);
+ }
+}
 function draw(){
  recipe=Object.fromEntries(Object.entries(fields).map(([k,el])=>[k,el.value]));
  svgText=FunfectionArt.render(recipe,catalog);
+ if(!specimens.some(item=>JSON.stringify(item)===JSON.stringify(recipe))){
+  specimens.unshift({...recipe});
+  // Bound memory for long sessions, including live seed edits.
+  if(specimens.length>60)specimens.pop();
+ }
+ showHistory();
  document.getElementById('art').innerHTML=svgText;
  const name=[recipe.prefix,recipe.family,recipe.suffix].join(' ');
  document.getElementById('art').setAttribute('aria-label',name+' abstract artwork');
