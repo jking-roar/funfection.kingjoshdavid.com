@@ -4,3 +4,10 @@
 .specimens{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}.current{min-width:0}#art{background:transparent;border-radius:50%;box-shadow:none}.caption{display:block}.caption span{display:block;margin-top:6px}.history-panel h2{font-size:14px;margin:0}.history-panel p{font-size:11px;color:#667487;margin:4px 0 12px}#history{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-height:480px;overflow:auto;padding:4px}.history-item{padding:0;border:2px solid transparent;background:transparent;margin:0;border-radius:50%;aspect-ratio:1}.history-item:hover{background:transparent;border-color:#9aa9c0}.history-item[aria-pressed="true"]{border-color:#243fdf}.history-item svg{display:block;width:100%;height:100%;border-radius:50%}#seed-help{display:block;margin-top:5px}@media(max-width:420px){.specimens{gap:14px}#history{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}}
 
 .trait-description{font-size:12px;line-height:1.5;color:#667487;margin:8px 0 0}
+
+/* Presentation glass stays outside the exported specimen SVG. */
+.microscope-slide{position:relative;padding:24px 12px 30px;background:linear-gradient(135deg,#ffffffbb,#dcebf150 48%,#ffffffb8);border:1px solid #bccdd7;border-radius:5px;box-shadow:0 4px 14px #17384616,inset 0 0 0 3px #ffffff70;isolation:isolate}
+.microscope-slide::before{content:"";position:absolute;inset:13% 6%;border:1px solid #b5c9d375;border-radius:50%;box-shadow:inset 0 0 22px #9fb7c72b;z-index:-1}
+.microscope-slide::after{content:"";position:absolute;inset:0;background:linear-gradient(118deg,transparent 28%,#ffffff70 29%,#ffffff15 39%,transparent 40%);pointer-events:none;border-radius:inherit}
+.slide-label{position:absolute;top:8px;left:10px;font:7px/1.2 ui-monospace,monospace;letter-spacing:.12em;color:#607b8a}.slide-scale{position:absolute;bottom:12px;right:13px;width:42px;height:5px;border:1px solid #607b8a;border-top:0;background:repeating-linear-gradient(90deg,transparent 0 6px,#607b8a 6px 7px)}
+#art,#art svg,.history-item svg{border-radius:0}.history-item{border-radius:8px}

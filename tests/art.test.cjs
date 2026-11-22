@@ -14,7 +14,7 @@ test('page restores recipe, edits, randomizes, shares, and exports',async()=>{
  const nodes={};for(const id of ['prefix','family','suffix','seed','recipe','art','name','edition','status','random','variation','svg','png','share','history','traits-info'])nodes[id]={children:[],replaceChildren(){this.children=[];},append(node){this.children.push(node);},value:'',add(){},addEventListener(k,fn){this[k]=fn;},setAttribute(){}};
  const downloads=[],blobs=[];let copied='';let current=new URL('https://example.com/art/?prefix=Neon&family=Bloom&suffix=Wiggle&seed=example');
  class FakeImage{async decode(){}}
-const context={FunfectionCatalog:catalog,FunfectionArt:globalThis.FunfectionArt,FunfectionTraits:globalThis.FunfectionTraits,URL:class extends URL{static createObjectURL(blob){blobs.push(blob);return 'blob:example';}static revokeObjectURL(){}},URLSearchParams,crypto:webcrypto,Uint32Array,Option:class{},Blob,Image:FakeImage,Math,setTimeout(){},location:{search:current.search,href:current.href},history:{replaceState(a,b,url){current=url;}},navigator:{clipboard:{async writeText(text){copied=text;}}},document:{getElementById:id=>nodes[id],createElement(tag){return tag==='button'?{setAttribute(k,v){this[k]=v;}}:tag==='a'?{click(){downloads.push(this.download);}}:{getContext(){return{beginPath(){},arc(x,y,r){assert.deepEqual([x,y,r],[800,800,800]);},clip(){},drawImage(){}};},toBlob(fn){fn(new Blob(['png'],{type:'image/png'}));}};}}};
+const context={FunfectionCatalog:catalog,FunfectionArt:globalThis.FunfectionArt,FunfectionTraits:globalThis.FunfectionTraits,URL:class extends URL{static createObjectURL(blob){blobs.push(blob);return 'blob:example';}static revokeObjectURL(){}},URLSearchParams,crypto:webcrypto,Uint32Array,Option:class{},Blob,Image:FakeImage,Path2D:class{constructor(d){this.d=d;}},Math,setTimeout(){},location:{search:current.search,href:current.href},history:{replaceState(a,b,url){current=url;}},navigator:{clipboard:{async writeText(text){copied=text;}}},document:{getElementById:id=>nodes[id],createElement(tag){return tag==='button'?{setAttribute(k,v){this[k]=v;}}:tag==='a'?{click(){downloads.push(this.download);}}:{getContext(){return{scale(x,y){assert.deepEqual([x,y],[2,2]);},clip(path){assert.equal(path.d,globalThis.FunfectionArt.cropPath(nodes.seed.value));},drawImage(img,x,y,w,h){assert.deepEqual([x,y,w,h],[0,0,800,800]);}};},toBlob(fn){fn(new Blob(['png'],{type:'image/png'}));}};}}};
  vm.runInNewContext(fs.readFileSync(require.resolve('../art/app.js'),'utf8'),context);
  assert.equal(nodes.name.textContent,'Neon Bloom Wiggle');assert.equal(nodes.seed.value,'example');assert.match(nodes.art.innerHTML,/<svg/);
  const first=nodes.art.innerHTML;
@@ -30,7 +30,7 @@ const context={FunfectionCatalog:catalog,FunfectionArt:globalThis.FunfectionArt,
  await nodes.share.onclick();assert.equal(copied,context.location.href);nodes.random.onclick();for(const key of Object.keys(catalog))assert.ok(catalog[key].includes(nodes[key].value));
 });
 
-test('circular clip encloses all painted artwork including background',()=>{const svg=render(base,catalog);assert.match(svg,/<clipPath id="art-crop"><circle cx="400" cy="400" r="400"\/><\/clipPath>/);assert.match(svg,/<g clip-path="url\(#art-crop\)"><rect/);assert.match(svg,/<\/g><\/g><\/svg>$/);});
+test('organic clip encloses all painted artwork including background',()=>{const svg=render(base,catalog);assert.ok(svg.includes('<clipPath id="art-crop"><path d="'+globalThis.FunfectionArt.cropPath(base.seed)+'"/></clipPath>'));assert.match(svg,/<g clip-path="url\(#art-crop\)"><rect/);});
 test('every category has an explicit semantic profile',()=>{
  const {prefixes,families,suffixes}=globalThis.FunfectionArt.traits;
  for(const [key,profiles] of [['prefix',prefixes],['family',families],['suffix',suffixes]]){
@@ -50,4 +50,20 @@ test('category changes preserve unrelated random layers; enum order does not mat
  assert.equal(a.family,b.family);assert.equal(a.prefix,b.prefix);assert.notEqual(a.suffix,b.suffix);
  const c=layers({...base,family:'Gyoza'});assert.equal(a.prefix,c.prefix);assert.equal(a.suffix,c.suffix);
  assert.equal(render(base,catalog),render(base,Object.fromEntries(Object.entries(catalog).map(([k,v])=>[k,[...v].reverse()]))));
+});
+
+test('crop varies with seed and stays independent of category choices',()=>{
+ const {cropPath,cropParameters}=globalThis.FunfectionArt;
+ assert.equal(cropPath('same'),cropPath('same'));
+ assert.notEqual(cropPath('same'),cropPath('other'));
+ const paths=new Set();
+ for(let i=0;i<100;i++){
+  const d=cropPath('seed-'+i);paths.add(d);
+  assert.match(d,/^M.*Z$/);assert.equal((d.match(/C/g)||[]).length,64);
+  assert.doesNotMatch(d,/NaN|Infinity/);
+  for(const v of d.match(/-?\d+(?:\.\d+)?/g).map(Number))assert.ok(v>0&&v<800);
+  const p=cropParameters('seed-'+i);assert.ok(p.lobes>=3&&p.lobes<=6);
+ }
+ assert.equal(paths.size,100);
+ for(const key of Object.keys(catalog))assert.ok(render({...base,[key]:catalog[key].at(-1)},catalog).includes('d="'+cropPath(base.seed)+'"'));
 });
