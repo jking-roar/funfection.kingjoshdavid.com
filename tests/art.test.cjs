@@ -11,10 +11,10 @@ test('all category values render finite SVG',()=>{for(const key of Object.keys(c
 test('untrusted seed text is escaped and unknown categories rejected',()=>{assert.doesNotMatch(render({...base,seed:'</desc><script>alert(1)</script>'},catalog),/<script>/);assert.throws(()=>render({...base,family:'fake'},catalog));});
 test('page restores recipe, edits, randomizes, shares, and exports',async()=>{
  const vm=require('node:vm'),{webcrypto}=require('node:crypto');
- const nodes={};for(const id of ['prefix','family','suffix','seed','recipe','art','name','edition','status','random','variation','svg','png','share','history'])nodes[id]={children:[],replaceChildren(){this.children=[];},append(node){this.children.push(node);},value:'',add(){},addEventListener(k,fn){this[k]=fn;},setAttribute(){}};
+ const nodes={};for(const id of ['prefix','family','suffix','seed','recipe','art','name','edition','status','random','variation','svg','png','share','history','traits-info'])nodes[id]={children:[],replaceChildren(){this.children=[];},append(node){this.children.push(node);},value:'',add(){},addEventListener(k,fn){this[k]=fn;},setAttribute(){}};
  const downloads=[],blobs=[];let copied='';let current=new URL('https://example.com/art/?prefix=Neon&family=Bloom&suffix=Wiggle&seed=example');
  class FakeImage{async decode(){}}
-const context={FunfectionCatalog:catalog,FunfectionArt:globalThis.FunfectionArt,URL:class extends URL{static createObjectURL(blob){blobs.push(blob);return 'blob:example';}static revokeObjectURL(){}},URLSearchParams,crypto:webcrypto,Uint32Array,Option:class{},Blob,Image:FakeImage,Math,setTimeout(){},location:{search:current.search,href:current.href},history:{replaceState(a,b,url){current=url;}},navigator:{clipboard:{async writeText(text){copied=text;}}},document:{getElementById:id=>nodes[id],createElement(tag){return tag==='button'?{setAttribute(k,v){this[k]=v;}}:tag==='a'?{click(){downloads.push(this.download);}}:{getContext(){return{beginPath(){},arc(x,y,r){assert.deepEqual([x,y,r],[800,800,800]);},clip(){},drawImage(){}};},toBlob(fn){fn(new Blob(['png'],{type:'image/png'}));}};}}};
+const context={FunfectionCatalog:catalog,FunfectionArt:globalThis.FunfectionArt,FunfectionTraits:globalThis.FunfectionTraits,URL:class extends URL{static createObjectURL(blob){blobs.push(blob);return 'blob:example';}static revokeObjectURL(){}},URLSearchParams,crypto:webcrypto,Uint32Array,Option:class{},Blob,Image:FakeImage,Math,setTimeout(){},location:{search:current.search,href:current.href},history:{replaceState(a,b,url){current=url;}},navigator:{clipboard:{async writeText(text){copied=text;}}},document:{getElementById:id=>nodes[id],createElement(tag){return tag==='button'?{setAttribute(k,v){this[k]=v;}}:tag==='a'?{click(){downloads.push(this.download);}}:{getContext(){return{beginPath(){},arc(x,y,r){assert.deepEqual([x,y,r],[800,800,800]);},clip(){},drawImage(){}};},toBlob(fn){fn(new Blob(['png'],{type:'image/png'}));}};}}};
  vm.runInNewContext(fs.readFileSync(require.resolve('../art/app.js'),'utf8'),context);
  assert.equal(nodes.name.textContent,'Neon Bloom Wiggle');assert.equal(nodes.seed.value,'example');assert.match(nodes.art.innerHTML,/<svg/);
  const first=nodes.art.innerHTML;
@@ -31,3 +31,23 @@ const context={FunfectionCatalog:catalog,FunfectionArt:globalThis.FunfectionArt,
 });
 
 test('circular clip encloses all painted artwork including background',()=>{const svg=render(base,catalog);assert.match(svg,/<clipPath id="art-crop"><circle cx="400" cy="400" r="400"\/><\/clipPath>/);assert.match(svg,/<g clip-path="url\(#art-crop\)"><rect/);assert.match(svg,/<\/g><\/g><\/svg>$/);});
+test('every category has an explicit semantic profile',()=>{
+ const {prefixes,families,suffixes}=globalThis.FunfectionArt.traits;
+ for(const [key,profiles] of [['prefix',prefixes],['family',families],['suffix',suffixes]]){
+  assert.deepEqual(Object.keys(profiles).sort(),[...catalog[key]].sort());
+  for(const profile of Object.values(profiles))assert.ok(profile.at(-1).length>10);
+ }
+ assert.equal(prefixes.Amber[2],'resin');assert.equal(prefixes.Frosty[2],'frost');
+ assert.equal(families.Gyoza[0],'dumpling');assert.equal(families.Xebec[0],'ship');
+ assert.equal(suffixes.Unzip[0],'zipper');assert.equal(suffixes.Crackle[0],'crack');
+});
+test('category changes preserve unrelated random layers; enum order does not matter',()=>{
+ const layers=recipe=>Object.fromEntries(['prefix','family','suffix'].map(key=>{
+  const svg=render(recipe,catalog),start=svg.indexOf('<g data-layer="'+key+'"'),next=svg.indexOf('<g data-layer="',start+1);
+  return [key,svg.slice(start,next<0?svg.lastIndexOf('</g></svg>'):next)];
+ }));
+ const a=layers(base),b=layers({...base,suffix:'Crackle'});
+ assert.equal(a.family,b.family);assert.equal(a.prefix,b.prefix);assert.notEqual(a.suffix,b.suffix);
+ const c=layers({...base,family:'Gyoza'});assert.equal(a.prefix,c.prefix);assert.equal(a.suffix,c.suffix);
+ assert.equal(render(base,catalog),render(base,Object.fromEntries(Object.entries(catalog).map(([k,v])=>[k,[...v].reverse()]))));
+});

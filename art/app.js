@@ -43,6 +43,7 @@ function draw(){
  document.getElementById('art').setAttribute('aria-label',name+' abstract artwork');
  document.getElementById('name').textContent=name;
  document.getElementById('edition').textContent='SEED '+recipe.seed;
+ document.getElementById('traits-info').textContent=[FunfectionTraits.prefixes[recipe.prefix][3],FunfectionTraits.families[recipe.family][4],FunfectionTraits.suffixes[recipe.suffix][3]].join(' · ');
  document.getElementById('status').textContent='';
  const url=new URL(location.href);url.search=new URLSearchParams(recipe).toString();
  history.replaceState(null,'',url);
