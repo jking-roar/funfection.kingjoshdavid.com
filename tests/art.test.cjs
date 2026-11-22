@@ -101,8 +101,8 @@ test('default icon scale doubles each motif without changing its anchor or crop'
   config.iconScale=1;const a=render(base,catalog);
   config.iconScale=2;const b=render(base,catalog);
   for(const key of ['prefix','family','suffix']){
-   const first=categoryLayer(a,key).match(/transform="translate\(([^)]+)\) rotate\(([^)]+)\) scale\(([^)]+)\)"/);
-   const second=categoryLayer(b,key).match(/transform="translate\(([^)]+)\) rotate\(([^)]+)\) scale\(([^)]+)\)"/);
+   const first=categoryLayer(a,key).match(/transform="translate\(([^)]+)\) rotate\(([^)]+)\) scale\(([^)]+)\) scale\((?:1|-1) (?:1|-1)\)"/);
+   const second=categoryLayer(b,key).match(/transform="translate\(([^)]+)\) rotate\(([^)]+)\) scale\(([^)]+)\) scale\((?:1|-1) (?:1|-1)\)"/);
    assert.equal(first[1],second[1]);assert.equal(first[2],second[2]);
    assert.ok(Math.abs(Number(second[3])-2*Number(first[3]))<=.011);
   }
@@ -125,4 +125,34 @@ test('invalid scale overrides are rejected',()=>{
  const {config,iconScale}=globalThis.FunfectionArt;
  try{for(const v of [0,-1,Infinity,NaN,'2']){config.categories.family.Spark=v;assert.throws(()=>iconScale('family','Spark'),/positive finite/);}}
  finally{delete config.categories.family.Spark;}
+});
+
+test('seeded mirroring has a repeatable frequency and supports every flip axis',()=>{
+ const {mirroringParameters,mirrorFor}=globalThis.FunfectionArt;
+ assert.deepEqual(mirroringParameters('same'),mirroringParameters('same'));
+ assert.notEqual(mirroringParameters('same').frequency,mirroringParameters('different').frequency);
+ const axes=new Set();
+ for(let j=0;j<12;j++){
+  const seed='mirror-'+j,p=mirroringParameters(seed).frequency;
+  assert.ok(p>=.1&&p<.8);
+  let flipped=0;
+  for(let i=0;i<500;i++){
+   const m=mirrorFor(seed,'family','Xebec',i);
+   assert.deepEqual(m,mirrorFor(seed,'family','Xebec',i));
+   assert.ok([1,-1].includes(m.x)&&[1,-1].includes(m.y));
+   axes.add([m.x,m.y].join(','));if(m.x<0||m.y<0)flipped++;
+  }
+  assert.ok(Math.abs(flipped/500-p)<.1);
+ }
+ assert.deepEqual([...axes].sort(),['-1,-1','-1,1','1,-1','1,1'].sort());
+});
+test('all motif layers contain mirroring transforms and remain reproducible',()=>{
+ const svg=render({...base,family:'Xebec'},catalog);
+ assert.equal(svg,render({...base,family:'Xebec'},catalog));
+ assert.match(svg,/scale\(-1 (?:1|-1)\)|scale\(1 -1\)/);
+ for(const category of ['prefix','family','suffix']){
+  const start=svg.indexOf('<g data-layer="'+category+'"'),next=svg.indexOf('<g data-layer="',start+1);
+  const layer=svg.slice(start,next<0?svg.lastIndexOf('</g></svg>'):next);
+  assert.match(layer,/scale\((?:1|-1) (?:1|-1)\)/);
+ }
 });
