@@ -39,6 +39,7 @@ function draw(){
  }
  showHistory();
  document.getElementById('art').innerHTML=svgText;
+ document.getElementById('plate-overlay').innerHTML=FunfectionPlate.render(recipe);
  const name=[recipe.prefix,recipe.family,recipe.suffix].join(' ');
  document.getElementById('art').setAttribute('aria-label',name+' abstract artwork');
  document.getElementById('name').textContent=name;

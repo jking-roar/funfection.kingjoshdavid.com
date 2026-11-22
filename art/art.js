@@ -22,7 +22,19 @@ function familyLayer(name,seed,palette){
  bits.push(`<g data-layer="family" data-trait="${esc(name)}" stroke-linecap="round" stroke-linejoin="round">`);
  // Global structures have their own composition instead of repeating a small symbol.
  if(kind==='lattice'){
-  for(let y=130;y<=670;y+=60)for(let x=130;x<=670;x+=60){bits.push(`<g color="${palette[(x+y)/60%palette.length|0]}">`);path(`M${x} ${y}l30 -30 30 30 -30 30Z`);circle(x,y,3,'currentColor');bits.push('</g>');}
+  const rotation=n(0,180),size=n(.65,1.2),spacing=n(32,72),missing=n(.08,.32);
+  const cells=Math.floor(540/spacing),half=cells*spacing/2;
+  bits.push(`<g data-lattice="mesh" transform="translate(400 400) rotate(${fmt(rotation)}) scale(${fmt(size)})" data-spacing="${fmt(spacing)}">`);
+  // Each edge is drawn once: omitted edges stay genuinely empty.
+  for(let row=0;row<=cells;row++)for(let col=0;col<=cells;col++){
+   const x=-half+col*spacing,y=-half+row*spacing;
+   bits.push(`<g color="${palette[(row+col)%palette.length]}">`);
+   if(col<cells&&n(0,1)>missing)line(x,y,x+spacing,y);
+   if(row<cells&&n(0,1)>missing)line(x,y,x,y+spacing);
+   if(n(0,1)>.25)circle(x,y,2,'currentColor','none');
+   bits.push('</g>');
+  }
+  bits.push('</g>');
  }else if(kind==='network'){
   const nodes=Array.from({length:count},()=>[n(140,660),n(140,660)]);bits.push(`<g color="${palette[0]}">`);
   nodes.forEach(([x,y],i)=>{nodes.map(([a,b],j)=>({j,d:Math.hypot(x-a,y-b)})).filter(v=>v.j!==i).sort((a,b)=>a.d-b.d).slice(0,3).forEach(({j})=>line(x,y,...nodes[j],1));circle(x,y,i%5===0?15:6,'currentColor');});bits.push('</g>');
