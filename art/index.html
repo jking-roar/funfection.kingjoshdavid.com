@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Art Lab · Funfection</title>
+<link rel="stylesheet" href="style.css">
+<script src="catalog.js" defer></script><script src="art.js" defer></script><script src="app.js" defer></script>
+</head>
+<body>
+<header><a href="/">FUNFECTION</a><span>Experiments in chance</span></header>
+<main>
+<section class="intro"><p class="eyebrow">THE ART LAB</p><h1>A little chaos.<br>A new specimen.</h1><p>Mix Funfection’s prefixes, families, and suffixes into a one-of-a-kind abstract print.</p></section>
+<section class="lab" aria-label="Art maker">
+<div class="work"><div id="art" role="img" aria-label="Generated artwork"></div><div class="caption"><h2 id="name"></h2><span id="edition"></span></div></div>
+<aside><p class="eyebrow">YOUR RECIPE</p><form id="recipe">
+<label for="prefix">Prefix <small>Palette & texture</small></label><select id="prefix"></select>
+<label for="family">Family <small>Shape & structure</small></label><select id="family"></select>
+<label for="suffix">Suffix <small>Marks & movement</small></label><select id="suffix"></select>
+<label for="seed">Seed <small>Same recipe, same art</small></label><input id="seed" maxlength="80" autocomplete="off">
+<button class="primary" type="button" id="random">Surprise me <span>↗</span></button>
+<button type="button" id="variation">New variation</button>
+<div class="downloads"><button type="button" id="svg">Save SVG</button><button type="button" id="png">Save PNG</button></div>
+<button type="button" id="share">Copy recipe link</button>
+</form><p class="note">Made here, in your browser.<br>58 prefixes · 58 families · 50 suffixes.</p><p id="status" role="status" aria-live="polite"></p></aside>
+</section><footer>Every recipe is repeatable. Every variation is a new experiment.</footer>
+</main></body></html>

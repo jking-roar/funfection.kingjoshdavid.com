@@ -50,3 +50,14 @@ parity, topology labels and canvas transforms, palette/custom colors and
 pointer events and coordinate mapping, and animation-frame render batching.
 Canvas calls and event handlers are tested; browser rasterization, native
 pointer capture, and visual layout still require a browser check.
+
+
+## Art Lab
+
+`/art/` makes deterministic abstract SVG artwork from the Funfection prefix, family, and suffix categories. Select any category, generate a random recipe or a new seed variation, copy a repeatable recipe URL, or export SVG / 1600 × 1600 PNG. Everything runs locally in the browser with no API keys or external dependencies.
+
+The catalog is a snapshot of the display names from `jking-roar/infection` at commit `6826faa230564528f8c2e7c20699c4f72b5aec88`, under `app/src/main/java/com/kingjoshdavid/funfection/model/viral/enums/{Prefix,Family,Suffix}.java`. Enum order is significant to the renderer. Prefix controls palette/texture; family controls topology, density, and geometry; suffix controls gesture marks. These are new art interpretations, not visuals copied from the Android app. Recipe rendering is version 1; preserve it to keep existing links reproducible.
+
+To update categories, update the three JSON snapshots and `art/catalog.js` together, preserving existing order. Keep private repository access out of the browser.
+
+Run art checks with `node --test tests/art.test.cjs`.
