@@ -61,3 +61,5 @@ The catalog is a snapshot of the display names from `jking-roar/infection` at co
 To update categories, update the three JSON snapshots and `art/catalog.js` together, preserving existing order. Keep private repository access out of the browser.
 
 Run art checks with `node --test tests/art.test.cjs`.
+
+Art Lab displays circular specimens at half the original width and height (one quarter of the area). SVG clipping is embedded in the artwork so both SVG and PNG downloads have transparent pixels outside the circle; the background inside the circle remains part of the recipe. Export resolutions remain 1200 × 1200 SVG / 1600 × 1600 PNG. Session history beside the current specimen keeps the latest 60 distinct recipes, including live seed edits, and clicking a thumbnail restores its controls and download content. Seed changes apply on every input event, not blur. History resets on page reload; copied recipe links remain repeatable.

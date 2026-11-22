@@ -11,12 +11,12 @@
 <main>
 <section class="intro"><p class="eyebrow">THE ART LAB</p><h1>A little chaos.<br>A new specimen.</h1><p>Mix Funfection’s prefixes, families, and suffixes into a one-of-a-kind abstract print.</p></section>
 <section class="lab" aria-label="Art maker">
-<div class="work"><div id="art" role="img" aria-label="Generated artwork"></div><div class="caption"><h2 id="name"></h2><span id="edition"></span></div></div>
+<div class="work"><div class="specimens"><div class="current"><div id="art" role="img" aria-label="Generated artwork"></div><div class="caption"><h2 id="name"></h2><span id="edition"></span></div></div><section class="history-panel" aria-label="Image history"><h2>History</h2><p>Click a specimen to revisit it.</p><div id="history"></div></section></div></div>
 <aside><p class="eyebrow">YOUR RECIPE</p><form id="recipe">
 <label for="prefix">Prefix <small>Palette & texture</small></label><select id="prefix"></select>
 <label for="family">Family <small>Shape & structure</small></label><select id="family"></select>
 <label for="suffix">Suffix <small>Marks & movement</small></label><select id="suffix"></select>
-<label for="seed">Seed <small>Same recipe, same art</small></label><input id="seed" maxlength="80" autocomplete="off">
+<label for="seed">Seed <small>Same recipe, same art</small></label><input id="seed" maxlength="80" autocomplete="off" aria-describedby="seed-help"><small id="seed-help">Updates as you type.</small>
 <button class="primary" type="button" id="random">Surprise me <span>↗</span></button>
 <button type="button" id="variation">New variation</button>
 <div class="downloads"><button type="button" id="svg">Save SVG</button><button type="button" id="png">Save PNG</button></div>
