@@ -54,8 +54,8 @@ const filename=()=>[recipe.prefix,recipe.family,recipe.suffix,recipe.seed].join(
 function download(blob,extension,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name+'.'+extension;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);}
 document.getElementById('svg').onclick=()=>download(new Blob([svgText],{type:'image/svg+xml'}),'svg',filename());
 document.getElementById('png').onclick=async()=>{
- const name=filename(),url=URL.createObjectURL(new Blob([svgText],{type:'image/svg+xml'})),img=new Image();
- try{img.src=url;await img.decode();const canvas=document.createElement('canvas');canvas.width=canvas.height=1600;const ctx=canvas.getContext('2d');ctx.beginPath();ctx.arc(800,800,800,0,Math.PI*2);ctx.clip();ctx.drawImage(img,0,0,1600,1600);const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error();download(blob,'png',name);document.getElementById('status').textContent='PNG saved.';}
+ const name=filename(),crop=FunfectionArt.cropPath(recipe.seed),url=URL.createObjectURL(new Blob([svgText],{type:'image/svg+xml'})),img=new Image();
+ try{img.src=url;await img.decode();const canvas=document.createElement('canvas');canvas.width=canvas.height=1600;const ctx=canvas.getContext('2d');ctx.scale(2,2);ctx.clip(new Path2D(crop));ctx.drawImage(img,0,0,800,800);const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error();download(blob,'png',name);document.getElementById('status').textContent='PNG saved.';}
  catch{document.getElementById('status').textContent='PNG export failed. Try saving SVG.';}
  finally{URL.revokeObjectURL(url);}
 };

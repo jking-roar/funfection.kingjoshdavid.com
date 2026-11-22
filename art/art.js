@@ -214,13 +214,35 @@ function suffixLayer(name,seed,palette){
  }
  bits.push('</g>');return bits.join('');
 }
+// Smooth closed specimen boundary. The seed alone controls its proportions and lobes.
+function cropParameters(seed){
+ const rng=random('crop:v1:'+String(seed));
+ return {radius:338+rng()*12,stretch:.91+rng()*.18,rotation:rng()*Math.PI*2,
+  lobes:3+Math.floor(rng()*4),amplitude:10+rng()*17,secondary:4+rng()*8,
+  phase:rng()*Math.PI*2,phase2:rng()*Math.PI*2};
+}
+function cropPath(seed){
+ const p=cropParameters(seed),points=[];
+ for(let i=0;i<64;i++){
+  const a=i*Math.PI/32,r=p.radius+p.amplitude*Math.sin(a*p.lobes+p.phase)+p.secondary*Math.sin(a*(p.lobes+1)+p.phase2);
+  const x=Math.cos(a)*r*p.stretch,y=Math.sin(a)*r/p.stretch;
+  points.push([400+x*Math.cos(p.rotation)-y*Math.sin(p.rotation),400+x*Math.sin(p.rotation)+y*Math.cos(p.rotation)]);
+ }
+ const at=i=>points[(i+64)%64],pair=v=>v.map(fmt).join(' ');
+ let d='M'+pair(points[0]);
+ for(let i=0;i<64;i++){
+  const a=at(i-1),b=at(i),c=at(i+1),e=at(i+2);
+  d+='C'+pair([b[0]+(c[0]-a[0])/6,b[1]+(c[1]-a[1])/6])+' '+pair([c[0]-(e[0]-b[0])/6,c[1]-(e[1]-b[1])/6])+' '+pair(c);
+ }
+ return d+'Z';
+}
 function render(recipe,catalog){
  const {prefix,family,suffix}=recipe,seed=String(recipe.seed);
  for(const k of ['prefix','family','suffix'])if(!catalog[k].includes(recipe[k]))throw Error('Unknown '+k);
  const [bg,colors]=traits.prefixes[prefix],palette=colors.split(' ');
  const title=[prefix,family,suffix].join(' ');
- return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 800 800"><title>${esc(title)}</title><desc>Funfection Art Lab. Semantic recipe version 2. Seed: ${esc(seed)}. ${esc(traits.prefixes[prefix][3])}; ${esc(traits.families[family][4])}; ${esc(traits.suffixes[suffix][3])}.</desc><defs><clipPath id="art-crop"><circle cx="400" cy="400" r="400"/></clipPath></defs><g clip-path="url(#art-crop)"><rect width="800" height="800" fill="${bg}"/>${textureLayer(prefix,seed,palette)}${familyLayer(family,seed,palette)}${suffixLayer(suffix,seed,palette)}</g></svg>`;
+ return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 800 800"><title>${esc(title)}</title><desc>Funfection Art Lab. Semantic recipe version 2. Seed: ${esc(seed)}. ${esc(traits.prefixes[prefix][3])}; ${esc(traits.families[family][4])}; ${esc(traits.suffixes[suffix][3])}.</desc><defs><clipPath id="art-crop"><path d="${cropPath(seed)}"/></clipPath></defs><g clip-path="url(#art-crop)"><rect width="800" height="800" fill="${bg}"/>${textureLayer(prefix,seed,palette)}${familyLayer(family,seed,palette)}${suffixLayer(suffix,seed,palette)}</g></svg>`;
 }
-root.FunfectionArt={render,hash,traits};
+root.FunfectionArt={render,hash,traits,cropPath,cropParameters};
 if(typeof module!=='undefined')module.exports=root.FunfectionArt;
 })(globalThis);
