@@ -67,3 +67,21 @@ test('crop varies with seed and stays independent of category choices',()=>{
  assert.equal(paths.size,100);
  for(const key of Object.keys(catalog))assert.ok(render({...base,[key]:catalog[key].at(-1)},catalog).includes('d="'+cropPath(base.seed)+'"'));
 });
+
+test('Lattice seed controls angle, size, spacing, and omitted mesh edges',()=>{
+ const meshes=[];
+ for(const seed of ['lattice-a','lattice-b','lattice-c']){
+  const recipe={...base,family:'Lattice',seed},svg=render(recipe,catalog);
+  assert.equal(svg,render(recipe,catalog));
+  const mesh=svg.slice(svg.indexOf('<g data-lattice="mesh"'),svg.indexOf('<g data-layer="suffix"'));
+  const spacing=Number(mesh.match(/data-spacing="([^"]+)"/)[1]);
+  const cells=Math.floor(540/spacing);
+  const edges=(mesh.match(/<path /g)||[]).length;
+  assert.ok(edges>0&&edges<2*cells*(cells+1),'some edges must be omitted');
+  assert.match(mesh,/rotate\([\d.]+\) scale\([\d.]+\)/);
+  meshes.push(mesh);
+ }
+ assert.equal(new Set(meshes).size,3);
+ const transforms=meshes.map(m=>m.match(/transform="([^"]+)"/)[1]);
+ assert.equal(new Set(transforms).size,3);
+});
