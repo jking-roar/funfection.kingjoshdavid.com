@@ -109,7 +109,7 @@ pointer capture, and visual layout still require a browser check.
 
 `/art/` makes deterministic abstract SVG artwork from the Funfection prefix, family, and suffix categories. Select any category, generate a random recipe or a new seed variation, copy a repeatable recipe URL, or export SVG / 1600 × 1600 PNG. Everything runs locally in the browser with no API keys or external dependencies.
 
-The catalog is a snapshot of the display names from `jking-roar/infection` at commit `6826faa230564528f8c2e7c20699c4f72b5aec88`, under `app/src/main/java/com/kingjoshdavid/funfection/model/viral/enums/{Prefix,Family,Suffix}.java`. Enum order is preserved for the dropdowns. Prefix controls palette/texture; family controls topology, density, and geometry; suffix controls gesture marks. These are new art interpretations, not visuals copied from the Android app. Recipe rendering now uses semantic version 2; see below.
+The catalog is a snapshot of the display names from `jking-roar/infection` at commit `6826faa230564528f8c2e7c20699c4f72b5aec88`, under `app/src/main/java/com/kingjoshdavid/funfection/model/viral/enums/{Prefix,Family,Suffix}.java`. Catalog snapshots preserve enum order; dropdowns display the names alphabetically. Prefix controls palette/texture; family controls topology, density, and geometry; suffix controls gesture marks. These are new art interpretations, not visuals copied from the Android app. Recipe rendering now uses semantic version 2; see below.
 
 To update categories, update the three JSON snapshots and `art/catalog.js` together, preserving existing order. Keep private repository access out of the browser.
 
