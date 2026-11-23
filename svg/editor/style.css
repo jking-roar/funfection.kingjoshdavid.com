@@ -1,0 +1,252 @@
+:root {
+  color-scheme: light;
+  --bg: #f5f7fb;
+  --card: #ffffff;
+  --border: #d6dce8;
+  --text: #1e2530;
+  --muted: #637083;
+  --accent: #2563eb;
+  --accent-hover: #1e4fc2;
+  --danger: #dc2626;
+  --shadow: 0 10px 30px rgba(21, 36, 66, 0.08);
+  --focus: #f59e0b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 580px) 1fr;
+  gap: 1rem;
+  padding: 1rem;
+  height: 100vh;
+}
+
+.panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.panel header {
+  border-bottom: 1px solid var(--border);
+  padding: 0.875rem 1rem;
+}
+
+h1 {
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.sub {
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.controls,
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+
+.tools {
+  background: #fafcff;
+}
+
+.tools .section {
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+  padding-right: 0.6rem;
+  margin-right: 0.15rem;
+  border-right: 1px solid var(--border);
+}
+
+.tools .section:last-child {
+  border-right: none;
+  margin-right: 0;
+  padding-right: 0;
+}
+
+.tools small {
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+button,
+.file-button {
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button:hover,
+.file-button:hover {
+  background: var(--accent-hover);
+}
+
+button.secondary {
+  background: #4b5563;
+}
+
+button.secondary:hover {
+  background: #3b4450;
+}
+
+button.ghost {
+  background: #eef2ff;
+  color: #2b418f;
+  border: 1px solid #c5d1ff;
+}
+
+button.ghost:hover {
+  background: #dce6ff;
+}
+
+button.danger {
+  background: var(--danger);
+}
+
+button.danger:hover {
+  background: #b91c1c;
+}
+
+#fileInput {
+  display: none;
+}
+
+input[type='color'] {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: white;
+  padding: 0.1rem;
+  cursor: pointer;
+}
+
+textarea {
+  width: 100%;
+  border: none;
+  border-radius: 0 0 12px 12px;
+  resize: none;
+  flex: 1;
+  min-height: 0;
+  padding: 1rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  background: #fcfdff;
+  color: #111827;
+  outline: none;
+  tab-size: 2;
+}
+
+.preview-wrap {
+  padding: 1rem;
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.preview {
+  min-height: 100%;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: white;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.preview [data-selected='true'] {
+  filter: drop-shadow(0 0 3px var(--focus));
+  cursor: pointer;
+}
+
+.preview .editor-overlay {
+  pointer-events: none;
+}
+
+.preview .editor-outline {
+  fill: none;
+  stroke: #f59e0b;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.preview .editor-handle {
+  pointer-events: all;
+  cursor: pointer;
+  fill: #ffffff;
+  stroke: #f59e0b;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.placeholder {
+  color: var(--muted);
+  text-align: center;
+}
+
+.status {
+  font-size: 0.85rem;
+  color: var(--muted);
+  padding: 0.7rem 1rem 1rem;
+  border-top: 1px solid var(--border);
+  margin-top: auto;
+}
+
+.status.error {
+  color: var(--danger);
+}
+
+@media (max-width: 1000px) {
+  .layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .panel {
+    min-height: 460px;
+  }
+}

@@ -4,12 +4,12 @@
  * Example: categories.prefix.Frosty = 3;
  * Example: categories.suffix.Crackle = 1;
  */
-(function(root){
-'use strict';
-const config={
- iconScale:2,
- categories:{prefix:{},family:{},suffix:{}}
-};
-root.FunfectionArtConfig=config;
-if(typeof module!=='undefined')module.exports=config;
+(function (root) {
+  'use strict';
+  const config = {
+    iconScale: 2,
+    categories: { prefix: {}, family: {}, suffix: {} },
+  };
+  root.FunfectionArtConfig = config;
+  if (typeof module !== 'undefined') module.exports = config;
 })(globalThis);

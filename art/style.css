@@ -1,18 +1,353 @@
-*{box-sizing:border-box}body{margin:0;background:#f5f7fa;color:#182638;font:16px/1.5 system-ui,sans-serif}header{padding:24px 5vw;display:flex;justify-content:space-between;border-bottom:1px solid #dce2e9;font-size:12px;letter-spacing:.1em}header a{font-weight:800;color:inherit;text-decoration:none}header span{color:#667487}main{max-width:1200px;margin:auto;padding:42px 30px}.eyebrow{font-size:11px;font-weight:800;letter-spacing:.18em;color:#486478;margin:0 0 14px}.intro{margin-bottom:32px}.intro h1{font-size:clamp(36px,5vw,60px);line-height:1.05;letter-spacing:-.05em;margin:0 0 18px}.intro>p:last-child{color:#5a6879;max-width:490px}.lab{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:42px;align-items:start}.work{min-width:0}#art{background:white;aspect-ratio:1;box-shadow:0 12px 40px #18263812}#art svg{display:block;width:100%;height:100%}.caption{display:flex;justify-content:space-between;align-items:baseline;gap:15px;padding:14px 0}.caption h2{font-size:16px;margin:0}.caption span{font-size:11px;color:#667487;overflow-wrap:anywhere}aside{padding-top:4px}label{display:flex;justify-content:space-between;font-size:13px;font-weight:650;margin:18px 0 6px}small{font-size:11px;font-weight:400;color:#667487}select,input,button{font:inherit;width:100%;border:1px solid #ccd5df;border-radius:6px;background:white;color:inherit;padding:11px 12px}button{cursor:pointer;margin-top:10px;font-size:13px;font-weight:650}button:hover{background:#e9eff5}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #619bf2;outline-offset:3px}.primary{background:#243fdf;color:white;border-color:#243fdf;margin-top:24px}.primary:hover{background:#1930bc}.primary span{float:right}.downloads{display:flex;gap:8px}.note,footer,#status{font-size:12px;color:#667487}.note{margin-top:22px}footer{border-top:1px solid #dce2e9;margin-top:30px;padding-top:20px}#status{min-height:18px}@media(max-width:700px){header span{display:none}main{padding:28px 20px}.lab{grid-template-columns:1fr;gap:20px}.caption{flex-wrap:wrap}aside{padding:0}.intro h1 br{display:none}}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: #f5f7fa;
+  color: #182638;
+  font:
+    16px/1.5 system-ui,
+    sans-serif;
+}
+header {
+  padding: 24px 5vw;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #dce2e9;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+}
+header a {
+  font-weight: 800;
+  color: inherit;
+  text-decoration: none;
+}
+header span {
+  color: #667487;
+}
+main {
+  max-width: 1200px;
+  margin: auto;
+  padding: 42px 30px;
+}
+.eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: #486478;
+  margin: 0 0 14px;
+}
+.intro {
+  margin-bottom: 32px;
+}
+.intro h1 {
+  font-size: clamp(36px, 5vw, 60px);
+  line-height: 1.05;
+  letter-spacing: -0.05em;
+  margin: 0 0 18px;
+}
+.intro > p:last-child {
+  color: #5a6879;
+  max-width: 490px;
+}
+.lab {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 42px;
+  align-items: start;
+}
+.work {
+  min-width: 0;
+}
+#art {
+  background: white;
+  aspect-ratio: 1;
+  box-shadow: 0 12px 40px #18263812;
+}
+#art svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 15px;
+  padding: 14px 0;
+}
+.caption h2 {
+  font-size: 16px;
+  margin: 0;
+}
+.caption span {
+  font-size: 11px;
+  color: #667487;
+  overflow-wrap: anywhere;
+}
+aside {
+  padding-top: 4px;
+}
+label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 650;
+  margin: 18px 0 6px;
+}
+small {
+  font-size: 11px;
+  font-weight: 400;
+  color: #667487;
+}
+select,
+input,
+button {
+  font: inherit;
+  width: 100%;
+  border: 1px solid #ccd5df;
+  border-radius: 6px;
+  background: white;
+  color: inherit;
+  padding: 11px 12px;
+}
+button {
+  cursor: pointer;
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 650;
+}
+button:hover {
+  background: #e9eff5;
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid #619bf2;
+  outline-offset: 3px;
+}
+.primary {
+  background: #243fdf;
+  color: white;
+  border-color: #243fdf;
+  margin-top: 24px;
+}
+.primary:hover {
+  background: #1930bc;
+}
+.primary span {
+  float: right;
+}
+.downloads {
+  display: flex;
+  gap: 8px;
+}
+.note,
+footer,
+#status {
+  font-size: 12px;
+  color: #667487;
+}
+.note {
+  margin-top: 22px;
+}
+footer {
+  border-top: 1px solid #dce2e9;
+  margin-top: 30px;
+  padding-top: 20px;
+}
+#status {
+  min-height: 18px;
+}
+@media (max-width: 700px) {
+  header span {
+    display: none;
+  }
+  main {
+    padding: 28px 20px;
+  }
+  .lab {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .caption {
+    flex-wrap: wrap;
+  }
+  aside {
+    padding: 0;
+  }
+  .intro h1 br {
+    display: none;
+  }
+}
 
 /* Half the original width and height gives one quarter of the display area. */
-.specimens{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}.current{min-width:0}#art{background:transparent;border-radius:50%;box-shadow:none}.caption{display:block}.caption span{display:block;margin-top:6px}.history-panel h2{font-size:14px;margin:0}.history-panel p{font-size:11px;color:#667487;margin:4px 0 12px}#history{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-height:480px;overflow:auto;padding:4px}.history-item{padding:0;border:2px solid transparent;background:transparent;margin:0;border-radius:50%;aspect-ratio:1}.history-item:hover{background:transparent;border-color:#9aa9c0}.history-item[aria-pressed="true"]{border-color:#243fdf}.history-item svg{display:block;width:100%;height:100%;border-radius:50%}#seed-help{display:block;margin-top:5px}@media(max-width:420px){.specimens{gap:14px}#history{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}}
+.specimens {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.current {
+  min-width: 0;
+}
+#art {
+  background: transparent;
+  border-radius: 50%;
+  box-shadow: none;
+}
+.caption {
+  display: block;
+}
+.caption span {
+  display: block;
+  margin-top: 6px;
+}
+.history-panel h2 {
+  font-size: 14px;
+  margin: 0;
+}
+.history-panel p {
+  font-size: 11px;
+  color: #667487;
+  margin: 4px 0 12px;
+}
+#history {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  max-height: 480px;
+  overflow: auto;
+  padding: 4px;
+}
+.history-item {
+  padding: 0;
+  border: 2px solid transparent;
+  background: transparent;
+  margin: 0;
+  border-radius: 50%;
+  aspect-ratio: 1;
+}
+.history-item:hover {
+  background: transparent;
+  border-color: #9aa9c0;
+}
+.history-item[aria-pressed='true'] {
+  border-color: #243fdf;
+}
+.history-item svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+#seed-help {
+  display: block;
+  margin-top: 5px;
+}
+@media (max-width: 420px) {
+  .specimens {
+    gap: 14px;
+  }
+  #history {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+}
 
-.trait-description{font-size:12px;line-height:1.5;color:#667487;margin:8px 0 0}
+.trait-description {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #667487;
+  margin: 8px 0 0;
+}
 
 /* Presentation glass stays outside the exported specimen SVG. */
-.microscope-slide{position:relative;padding:24px 12px 30px;background:linear-gradient(135deg,#ffffffbb,#dcebf150 48%,#ffffffb8);border:1px solid #bccdd7;border-radius:5px;box-shadow:0 4px 14px #17384616,inset 0 0 0 3px #ffffff70;isolation:isolate}
-.microscope-slide::before{content:"";position:absolute;inset:13% 6%;border:1px solid #b5c9d375;border-radius:50%;box-shadow:inset 0 0 22px #9fb7c72b;z-index:-1}
-.microscope-slide::after{content:"";position:absolute;inset:0;background:linear-gradient(118deg,transparent 28%,#ffffff70 29%,#ffffff15 39%,transparent 40%);pointer-events:none;border-radius:inherit}
-.slide-label{position:absolute;top:8px;left:10px;font:7px/1.2 ui-monospace,monospace;letter-spacing:.12em;color:#607b8a}.slide-scale{position:absolute;bottom:12px;right:13px;width:42px;height:5px;border:1px solid #607b8a;border-top:0;background:repeating-linear-gradient(90deg,transparent 0 6px,#607b8a 6px 7px)}
-#art,#art svg,.history-item svg{border-radius:0}.history-item{border-radius:8px}
+.microscope-slide {
+  position: relative;
+  padding: 24px 12px 30px;
+  background: linear-gradient(135deg, #ffffffbb, #dcebf150 48%, #ffffffb8);
+  border: 1px solid #bccdd7;
+  border-radius: 5px;
+  box-shadow:
+    0 4px 14px #17384616,
+    inset 0 0 0 3px #ffffff70;
+  isolation: isolate;
+}
+.microscope-slide::before {
+  content: '';
+  position: absolute;
+  inset: 13% 6%;
+  border: 1px solid #b5c9d375;
+  border-radius: 50%;
+  box-shadow: inset 0 0 22px #9fb7c72b;
+  z-index: -1;
+}
+.microscope-slide::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    118deg,
+    transparent 28%,
+    #ffffff70 29%,
+    #ffffff15 39%,
+    transparent 40%
+  );
+  pointer-events: none;
+  border-radius: inherit;
+}
+.slide-label {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  font:
+    7px/1.2 ui-monospace,
+    monospace;
+  letter-spacing: 0.12em;
+  color: #607b8a;
+}
+.slide-scale {
+  position: absolute;
+  bottom: 12px;
+  right: 13px;
+  width: 42px;
+  height: 5px;
+  border: 1px solid #607b8a;
+  border-top: 0;
+  background: repeating-linear-gradient(90deg, transparent 0 6px, #607b8a 6px 7px);
+}
+#art,
+#art svg,
+.history-item svg {
+  border-radius: 0;
+}
+.history-item {
+  border-radius: 8px;
+}
 
 /* The seeded glass SVG replaces the fixed coverslip and reflection. */
-.microscope-slide{background:transparent;border:0;box-shadow:0 4px 14px #17384616}
-.microscope-slide::before,.microscope-slide::after{content:none}
-.plate-overlay{position:absolute;inset:0;pointer-events:none;z-index:0}.plate-overlay svg{display:block;width:100%;height:100%}.microscope-slide #art{position:relative;z-index:1}
+.microscope-slide {
+  background: transparent;
+  border: 0;
+  box-shadow: 0 4px 14px #17384616;
+}
+.microscope-slide::before,
+.microscope-slide::after {
+  content: none;
+}
+.plate-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.plate-overlay svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.microscope-slide #art {
+  position: relative;
+  z-index: 1;
+}
