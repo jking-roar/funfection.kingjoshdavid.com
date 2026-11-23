@@ -1,6 +1,59 @@
 # funfection.kingjoshdavid.com
 Site for the funfection app
 
+## Code map
+
+Each interactive page keeps its markup in `index.html`, presentation in
+`style.css`, and browser behavior in `app.js`, next to one another in its
+route directory. The small infection redirect only needs HTML and JavaScript.
+No build step or framework is required; serve this directory as a static site.
+
+| Directory | Purpose | Where to start |
+| --- | --- | --- |
+| `art/` | Deterministic artwork, recipes, exports, and session history | `app.js` for UI; see the renderer map below |
+| `tiles/` | Pixel tile editor, mirroring, and repeat previews | `app.js` |
+| `svg/editor/` | SVG markup editor and live preview | `app.js` |
+| `canarysplode/` | Interactive canary experiment | `app.js` |
+| `virus-hunt/` | Browser virus hunt | `app.js` |
+| `infect/` | Redirect shared infection links to Android | `app.js` |
+| `tests/` | Node behavior tests for Art Lab and tiles | `art.test.cjs`, `tiles.test.cjs` |
+| `.well-known/` | Android App Links verification | `assetlinks.json` |
+
+### Art Lab renderer map
+
+| File | Responsibility |
+| --- | --- |
+| `catalog.js` | Browser category lists, preserving enum order |
+| `prefix.json`, `family.json`, `suffix.json` | Category snapshots checked against the catalog |
+| `traits.js` | Named visual interpretations; tuple fields are documented above each map |
+| `config.js` | Default and per-category icon scales |
+| `art.js` | Seeded randomness, SVG primitives, family/prefix/suffix layers, crop, final composition |
+| `plate.js` | Seeded microscope-slide overlay |
+| `app.js` | Form and URL state, history, rendering, downloads, clipboard, initialization |
+
+Art Lab loads its classic scripts in dependency order: catalog, traits, config,
+renderer, plate, then UI. Keep that order when adding scripts. The renderer,
+traits, configuration, and plate also support Node's `require` for tests.
+
+### Local checks and formatting
+
+From this directory, run all behavior tests:
+
+```bash
+node --test tests/*.test.cjs
+```
+
+Formatting uses the checked-in `.prettierrc.json`. With Node and npm available:
+
+```bash
+npx --yes prettier@3.10.1 --check "**/*.{html,css,js,cjs,json}"
+npx --yes prettier@3.10.1 --write "**/*.{html,css,js,cjs,json}"
+```
+
+Format changes separately from behavior changes when possible. Keep each page's
+assets local to its route, and preserve seeded random-call order in rendering
+code so existing recipe URLs continue to produce the same artwork.
+
 ## Setup
 
 This is a GitHub Pages site that serves as the Android App Links verification domain for the Funfection Android app. It handles deep-link URLs of the form:
@@ -43,7 +96,7 @@ Run with Node.js 18 or newer; no packages or installation are required:
 node --test tests/tiles.test.cjs
 ```
 
-The tests execute the inline script from `tiles/index.html` in an isolated VM
+The tests execute `tiles/app.js` in an isolated VM
 with a small DOM/canvas harness. They cover mirroring, torus and Möbius seam
 parity, topology labels and canvas transforms, palette/custom colors and
 `aria-pressed`, erasing and Clear all, resize preservation, preview counts,

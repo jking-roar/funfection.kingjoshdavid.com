@@ -1,0 +1,243 @@
+:root {
+  --bg: #08111f;
+  --panel: rgba(13, 24, 43, 0.88);
+  --panel-border: rgba(119, 237, 255, 0.22);
+  --text: #e7fbff;
+  --muted: #9cb8c4;
+  --cyan: #63e6ff;
+  --green: #5dff9d;
+  --pink: #ff4fa3;
+  --orange: #ffb454;
+  --red: #ff5868;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 15% 15%, rgba(99, 230, 255, 0.16), transparent 32rem),
+    radial-gradient(circle at 80% 10%, rgba(255, 79, 163, 0.13), transparent 28rem),
+    linear-gradient(145deg, #060a13 0%, var(--bg) 56%, #0b1729 100%);
+}
+
+header,
+main {
+  width: min(1100px, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
+header {
+  padding: 1.25rem 0 0;
+}
+
+a {
+  color: var(--cyan);
+  font-weight: 800;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  align-items: end;
+  padding: 1.25rem 0 1rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.4rem, 8vw, 5.8rem);
+  line-height: 0.86;
+  letter-spacing: -0.08em;
+  text-shadow: 0 0 28px rgba(99, 230, 255, 0.28);
+}
+
+.intro {
+  color: var(--muted);
+  max-width: 45rem;
+  margin: 0.8rem 0 0;
+}
+
+.score-card {
+  min-width: 12rem;
+  padding: 1rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  background: var(--panel);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+}
+
+.score-label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+#score {
+  display: block;
+  font-size: 2.6rem;
+  font-weight: 900;
+  color: var(--green);
+  line-height: 1;
+}
+#status {
+  margin-top: 0.45rem;
+  color: var(--orange);
+  font-weight: 800;
+  min-height: 1.3rem;
+}
+
+.game-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 760px) minmax(240px, 1fr);
+  gap: 1rem;
+  align-items: start;
+  padding-bottom: 2rem;
+}
+
+.canvas-wrap,
+.instructions {
+  border: 1px solid var(--panel-border);
+  border-radius: 24px;
+  background: var(--panel);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+  overflow: hidden;
+}
+
+canvas {
+  aspect-ratio: 19 / 14;
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  background: #0a1424;
+  touch-action: none;
+}
+
+.instructions {
+  padding: 1rem;
+}
+.instructions h2 {
+  margin: 0 0 0.6rem;
+}
+.instructions ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--muted);
+}
+.instructions li {
+  margin: 0.55rem 0;
+}
+.key {
+  color: var(--text);
+  font-weight: 900;
+}
+.restart {
+  width: 100%;
+  margin-top: 1rem;
+  border: 0;
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+  color: #07111f;
+  background: linear-gradient(135deg, var(--cyan), var(--green));
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.mobile-controls {
+  display: none;
+  grid-template-columns: repeat(3, minmax(3.8rem, 1fr));
+  gap: 0.55rem;
+  margin-top: 1rem;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.move-button {
+  min-height: 3.8rem;
+  border: 1px solid rgba(99, 230, 255, 0.34);
+  border-radius: 18px;
+  color: var(--text);
+  background: rgba(99, 230, 255, 0.13);
+  box-shadow: inset 0 0 18px rgba(99, 230, 255, 0.08);
+  font-size: 1.55rem;
+  font-weight: 900;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.move-button:active {
+  transform: translateY(1px) scale(0.98);
+  background: rgba(93, 255, 157, 0.22);
+}
+
+.move-up {
+  grid-column: 2;
+}
+.move-left {
+  grid-column: 1;
+  grid-row: 2;
+}
+.move-down {
+  grid-column: 2;
+  grid-row: 2;
+}
+.move-right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+@media (max-width: 820px) {
+  header,
+  main {
+    width: min(100% - 1rem, 1100px);
+  }
+  header {
+    padding-top: 0.75rem;
+  }
+  .hero {
+    padding-top: 0.75rem;
+  }
+  .hero,
+  .game-shell {
+    grid-template-columns: 1fr;
+  }
+  h1 {
+    font-size: clamp(2rem, 14vw, 4rem);
+  }
+  .intro {
+    font-size: 0.95rem;
+  }
+  .score-card {
+    min-width: 0;
+  }
+  .canvas-wrap,
+  .instructions {
+    border-radius: 18px;
+  }
+  .mobile-controls {
+    display: grid;
+  }
+}
+
+@media (pointer: coarse) {
+  .mobile-controls {
+    display: grid;
+  }
+}
