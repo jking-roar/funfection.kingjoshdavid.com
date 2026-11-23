@@ -113,7 +113,9 @@ function initialize() {
   const newSeed = () =>
     Array.from(crypto.getRandomValues(new Uint32Array(2)), (x) => x.toString(36)).join('-');
   for (const key of ['prefix', 'family', 'suffix']) {
-    for (const name of catalog[key]) fields[key].add(new Option(name, name));
+    for (const name of [...catalog[key]].sort((a, b) => a.localeCompare(b, 'en'))) {
+      fields[key].add(new Option(name, name));
+    }
     fields[key].value = catalog[key].includes(params.get(key))
       ? params.get(key)
       : catalog[key][Math.floor(Math.random() * catalog[key].length)];
