@@ -194,3 +194,12 @@ painted back-to-front as complete body/adornment groups, allowing natural overla
 Each gets its own deterministic geometry and attachment stream; the palette and
 prefix surface treatment remain shared across the plate. Layout is independent
 of category choices. Existing recipe URLs intentionally render the new layout.
+
+### Count-dependent size and adornment legibility
+
+Nominal plate multipliers for counts 1–9 are 0.95, 0.80, 0.68, 0.60, 0.55,
+0.51, 0.48, 0.45, and 0.42, with ±4% seeded instance variation. Sparse plates
+use a smaller center-placement region to accommodate their larger bodies.
+Suffixes normalize by each gesture's native radius, and receive a minimum
+18-unit visible nominal radius after family and instance scaling (before explicit
+suffix overrides). This floor includes the minimum seeded detail size.

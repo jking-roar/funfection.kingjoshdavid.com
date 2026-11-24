@@ -552,7 +552,7 @@ test('plate layouts span one to nine smaller, spread-out instances and permit ov
     counts.add(layout.length);
     for (let j = 0; j < layout.length; j++) {
       const p = layout[j];
-      assert.ok(p.scale >= 0.39 && p.scale <= 0.59);
+      assert.ok(p.scale >= 0.4 && p.scale <= 0.99);
       assert.ok(Math.hypot(p.x - 400, p.y - 400) <= 220.01);
       for (const q of layout.slice(0, j)) {
         const distance = Math.hypot(p.x - q.x, p.y - q.y);
@@ -570,4 +570,32 @@ test('plate layouts span one to nine smaller, spread-out instances and permit ov
     [1, 2, 3, 4, 5, 6, 7, 8, 9],
   );
   assert.ok(overlaps > 0);
+});
+
+test('count scaling strictly decreases and sparse plates have larger bodies', () => {
+  const { countScale } = globalThis.FunfectionArt;
+  assert.equal(countScale(1), 0.95);
+  assert.equal(countScale(2), 0.8);
+  for (let count = 2; count <= 9; count++) assert.ok(countScale(count) < countScale(count - 1));
+});
+test('every suffix has a finite native glyph radius', () => {
+  for (const name of catalog.suffix)
+    assert.ok(globalThis.FunfectionArt.suffixGlyphRadius(name) > 0);
+});
+test('adornment sizing compensates for complete instance scaling', () => {
+  for (const family of catalog.family) {
+    const svg = render({ ...base, family, seed: 'nine-small' }, catalog);
+    const instances = svg.split(/<g data-instance="\d+" transform="/).slice(1);
+    for (const instance of instances) {
+      const sceneScale = Number(instance.match(/scale\(([\d.]+)\)/)[1]);
+      const re = /data-family-part="\d+" transform="([^"]+)"><g data-adornment-radius="([^"]+)"/g;
+      for (const [, transform, radius] of instance.matchAll(re)) {
+        const frameScale = [...transform.matchAll(/scale\(([^)]+)\)/g)].reduce(
+          (p, m) => p * Math.abs(Number(m[1].split(' ')[0])),
+          1,
+        );
+        assert.ok(sceneScale * frameScale * Number(radius) * 0.92 >= 17.99, family);
+      }
+    }
+  }
 });
