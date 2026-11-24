@@ -1,4 +1,4 @@
-/* Semantic renderer v2. Category streams are independent; enum order has no visual meaning. */
+/* Semantic renderer v3. Family geometry drives suffix attachment; enum order has no visual meaning. */
 (function (root) {
   'use strict';
   const traits =
@@ -97,6 +97,12 @@
   }
   // Family geometry: whole compositions and repeated silhouettes.
   function familyLayer(name, seed, palette) {
+    const attachments = [];
+    const record = (transform, color, extent = 45) => {
+      const attachment = { id: attachments.length, transform, color, extent };
+      attachments.push(attachment);
+      return attachment;
+    };
     const [kind, count, scale, param] = traits.families[name],
       iconSize = iconScale('family', name);
     const { bits, n } = layer('family:' + name + ':' + seed);
@@ -106,6 +112,9 @@
     );
     // Global structures have their own composition instead of repeating a small symbol.
     const globalStructure = kind === 'lattice' || kind === 'network';
+    const structureTransform = globalStructure
+      ? `translate(400 400) scale(${iconSize}) ${mirrorTransform(seed, 'family', name, 0)} translate(-400 -400)`
+      : '';
     if (globalStructure)
       bits.push(
         `<g data-icon-scale="${iconSize}" transform="translate(400 400) scale(${iconSize}) ${mirrorTransform(seed, 'family', name, 0)} translate(-400 -400)">`,
@@ -128,7 +137,14 @@
           bits.push(`<g color="${palette[(row + col) % palette.length]}">`);
           if (col < cells && n(0, 1) > missing) line(x, y, x + spacing, y);
           if (row < cells && n(0, 1) > missing) line(x, y, x, y + spacing);
-          if (n(0, 1) > 0.25) circle(x, y, 2, 'currentColor', 'none');
+          if (n(0, 1) > 0.25) {
+            circle(x, y, 2, 'currentColor', 'none');
+            record(
+              `${structureTransform} translate(400 400) rotate(${fmt(rotation)}) scale(${fmt(size)}) translate(${fmt(x)} ${fmt(y)})`,
+              palette[(row + col) % palette.length],
+              spacing * 0.35,
+            );
+          }
           bits.push('</g>');
         }
       bits.push('</g>');
@@ -142,7 +158,9 @@
           .sort((a, b) => a.d - b.d)
           .slice(0, 3)
           .forEach(({ j }) => line(x, y, ...nodes[j], 1));
-        circle(x, y, i % 5 === 0 ? 15 : 6, 'currentColor');
+        const radius = i % 5 === 0 ? 15 : 6;
+        circle(x, y, radius, 'currentColor');
+        record(`${structureTransform} translate(${fmt(x)} ${fmt(y)})`, palette[0], radius);
       });
       bits.push('</g>');
     } else {
@@ -173,8 +191,10 @@
         ].includes(kind)
           ? n(-12, 12)
           : n(-180, 180);
+        const transform = `translate(${fmt(x)} ${fmt(y)}) rotate(${fmt(rotation)}) scale(${fmt((s / 50) * iconSize)}) ${mirrorTransform(seed, 'family', name, i)}`;
+        const attachment = record(transform, color);
         bits.push(
-          `<g transform="translate(${fmt(x)} ${fmt(y)}) rotate(${fmt(rotation)}) scale(${fmt((s / 50) * iconSize)}) ${mirrorTransform(seed, 'family', name, i)}" color="${color}">`,
+          `<g data-family-part="${attachment.id}" transform="${transform}" color="${color}">`,
         );
         switch (kind) {
           case 'spark':
@@ -589,7 +609,7 @@
     }
     if (globalStructure) bits.push('</g>');
     bits.push('</g>');
-    return bits.join('');
+    return { svg: bits.join(''), name, kind, attachments };
   }
   // Prefix palettes and surface textures.
   function textureLayer(name, seed, palette) {
@@ -833,14 +853,14 @@
     bits.push('</g>');
     return bits.join('');
   }
-  // Suffix gestures and marks.
-  function suffixLayer(name, seed, palette) {
+  // Suffix details use the recorded family coordinate frames, never canvas positions.
+  function suffixLayer(name, seed, palette, family) {
     const [kind, count, scale] = traits.suffixes[name],
       iconSize = iconScale('suffix', name),
       { bits, n } = layer('suffix:' + name + ':' + seed),
       { path, circle, line, rect, star, spiral } = tools(bits);
     bits.push(
-      `<g data-layer="suffix" data-trait="${esc(name)}" stroke-linecap="round" stroke-linejoin="round" opacity="0.78">`,
+      `<g data-layer="suffix" data-trait="${esc(name)}" data-family="${esc(family.name)}" stroke-linecap="round" stroke-linejoin="round" opacity="0.78">`,
     );
     const bubble = (x = 0, y = 0, r = 17) => {
       circle(x, y, r, 'none', 'currentColor', 1.5);
@@ -850,12 +870,16 @@
       for (let k = 0; k < 3; k++)
         path(`M${k * 9} -${r + k * 5}Q${r + k * 18} 0 ${k * 9} ${r + k * 5}`);
     };
-    for (let i = 0; i < count; i++) {
-      const x = n(65, 735),
-        y = n(65, 735),
-        size = scale * n(0.7, 1.2);
+    // Spread the suffix's detail budget across existing family parts.
+    const detailCount = Math.min(count, family.attachments.length);
+    for (let i = 0; i < detailCount; i++) {
+      const attachment =
+        family.attachments[Math.floor((i * family.attachments.length) / detailCount)];
+      const x = n(-0.25, 0.25) * attachment.extent,
+        y = n(-0.25, 0.25) * attachment.extent,
+        size = ((scale / 35) * n(0.7, 1.2) * attachment.extent) / 100;
       bits.push(
-        `<g transform="translate(${fmt(x)} ${fmt(y)}) rotate(${fmt(n(-40, 40))}) scale(${fmt((size / 35) * iconSize)}) ${mirrorTransform(seed, 'suffix', name, i)}" color="${palette[(i + 1) % palette.length]}">`,
+        `<g data-family-part="${attachment.id}" transform="${attachment.transform}"><g transform="translate(${fmt(x)} ${fmt(y)}) rotate(${fmt(n(-20, 20))}) scale(${fmt(size * iconSize)}) ${mirrorTransform(seed, 'suffix', name, i)}" color="${attachment.color}">`,
       );
       switch (kind) {
         case 'sneeze':
@@ -1098,7 +1122,7 @@
         default:
           throw Error('Unimplemented suffix ' + kind);
       }
-      bits.push('</g>');
+      bits.push('</g></g>');
     }
     bits.push('</g>');
     return bits.join('');
@@ -1160,12 +1184,14 @@
     const [bg, colors] = traits.prefixes[prefix],
       palette = colors.split(' ');
     const title = [prefix, family, suffix].join(' ');
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 800 800"><title>${esc(title)}</title><desc>Funfection Art Lab. Semantic recipe version 2. Seed: ${esc(seed)}. ${esc(traits.prefixes[prefix][3])}; ${esc(traits.families[family][4])}; ${esc(traits.suffixes[suffix][3])}.</desc><defs><clipPath id="art-crop"><path d="${cropPath(seed)}"/></clipPath></defs><g clip-path="url(#art-crop)"><rect width="800" height="800" fill="${bg}"/>${textureLayer(prefix, seed, palette)}${familyLayer(family, seed, palette)}${suffixLayer(suffix, seed, palette)}</g></svg>`;
+    const application = familyLayer(family, seed, palette);
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 800 800"><title>${esc(title)}</title><desc>Funfection Art Lab. Semantic recipe version 3. Seed: ${esc(seed)}. ${esc(traits.prefixes[prefix][3])}; ${esc(traits.families[family][4])}; ${esc(traits.suffixes[suffix][3])}.</desc><defs><clipPath id="art-crop"><path d="${cropPath(seed)}"/></clipPath></defs><g clip-path="url(#art-crop)"><rect width="800" height="800" fill="${bg}"/>${textureLayer(prefix, seed, palette)}${application.svg}${suffixLayer(suffix, seed, palette, application)}</g></svg>`;
   }
   root.FunfectionArt = {
     render,
     hash,
     traits,
+    familyApplication: familyLayer,
     cropPath,
     cropParameters,
     iconScale,
