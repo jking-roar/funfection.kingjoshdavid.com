@@ -1,4 +1,4 @@
-/* Semantic renderer v3. Family geometry drives suffix attachment; enum order has no visual meaning. */
+/* Semantic renderer v4. Family geometry drives suffix attachment; enum order has no visual meaning. */
 (function (root) {
   'use strict';
   const traits =
@@ -98,8 +98,18 @@
   // Family geometry: whole compositions and repeated silhouettes.
   function familyLayer(name, seed, palette) {
     const attachments = [];
-    const record = (transform, color, extent = 45) => {
-      const attachment = { id: attachments.length, transform, color, extent };
+    const profile = traits.adornments[name];
+    const record = (bodyTransform, color, point, extent = profile.suffixRadius * 1.5) => {
+      const [x, y, angle] = point;
+      const transform = `${bodyTransform} translate(${x} ${y}) rotate(${angle})`;
+      const attachment = {
+        id: attachments.length,
+        bodyTransform,
+        transform,
+        color,
+        extent,
+        point: [...point],
+      };
       attachments.push(attachment);
       return attachment;
     };
@@ -113,11 +123,11 @@
     // Global structures have their own composition instead of repeating a small symbol.
     const globalStructure = kind === 'lattice' || kind === 'network';
     const structureTransform = globalStructure
-      ? `translate(400 400) scale(${iconSize}) ${mirrorTransform(seed, 'family', name, 0)} translate(-400 -400)`
+      ? `translate(400 400) scale(${iconSize / 2}) ${mirrorTransform(seed, 'family', name, 0)} translate(-400 -400)`
       : '';
     if (globalStructure)
       bits.push(
-        `<g data-icon-scale="${iconSize}" transform="translate(400 400) scale(${iconSize}) ${mirrorTransform(seed, 'family', name, 0)} translate(-400 -400)">`,
+        `<g data-icon-scale="${iconSize}" transform="translate(400 400) scale(${iconSize / 2}) ${mirrorTransform(seed, 'family', name, 0)} translate(-400 -400)">`,
       );
     if (kind === 'lattice') {
       const rotation = n(0, 180),
@@ -140,9 +150,10 @@
           if (n(0, 1) > 0.25) {
             circle(x, y, 2, 'currentColor', 'none');
             record(
-              `${structureTransform} translate(400 400) rotate(${fmt(rotation)}) scale(${fmt(size)}) translate(${fmt(x)} ${fmt(y)})`,
+              `${structureTransform} translate(400 400) rotate(${fmt(rotation)}) scale(${fmt(size)})`,
               palette[(row + col) % palette.length],
-              spacing * 0.35,
+              [fmt(x), fmt(y), (Math.atan2(y, x) * 180) / Math.PI],
+              Math.min(profile.suffixRadius, spacing * 0.22),
             );
           }
           bits.push('</g>');
@@ -160,16 +171,20 @@
           .forEach(({ j }) => line(x, y, ...nodes[j], 1));
         const radius = i % 5 === 0 ? 15 : 6;
         circle(x, y, radius, 'currentColor');
-        record(`${structureTransform} translate(${fmt(x)} ${fmt(y)})`, palette[0], radius);
+        record(`${structureTransform} translate(${fmt(x)} ${fmt(y)})`, palette[0], [
+          0,
+          0,
+          (Math.atan2(y - 400, x - 400) * 180) / Math.PI,
+        ]);
       });
       bits.push('</g>');
     } else {
-      for (let i = 0; i < count; i++) {
+      for (let i = 0; i < 1; i++) {
         const angle = n(0, Math.PI * 2),
-          radius = Math.sqrt(n(0, 1)) * 255,
+          radius = Math.sqrt(n(0, 1)) * 12,
           x = 400 + Math.cos(angle) * radius,
           y = 400 + Math.sin(angle) * radius,
-          s = scale * n(0.65, 1.25),
+          s = (170 / profile.bodyRadius) * 50 * n(0.96, 1.04),
           color = palette[i % palette.length];
         const rotation = [
           'rain',
@@ -191,11 +206,9 @@
         ].includes(kind)
           ? n(-12, 12)
           : n(-180, 180);
-        const transform = `translate(${fmt(x)} ${fmt(y)}) rotate(${fmt(rotation)}) scale(${fmt((s / 50) * iconSize)}) ${mirrorTransform(seed, 'family', name, i)}`;
-        const attachment = record(transform, color);
-        bits.push(
-          `<g data-family-part="${attachment.id}" transform="${transform}" color="${color}">`,
-        );
+        const transform = `translate(${fmt(x)} ${fmt(y)}) rotate(${fmt(rotation)}) scale(${fmt(((s / 50) * iconSize) / 2)}) ${mirrorTransform(seed, 'family', name, i)}`;
+        profile.points.forEach((point) => record(transform, color, point));
+        bits.push(`<g data-family-body="0" transform="${transform}" color="${color}">`);
         switch (kind) {
           case 'spark':
             star(45, param, 0.17);
@@ -607,7 +620,29 @@
         bits.push('</g>');
       }
     }
-    if (globalStructure) bits.push('</g>');
+    if (globalStructure) {
+      bits.push('</g>');
+      // Keep three well-separated peripheral nodes, rather than internal
+      // intersections. The stored frames still match the SVG node exactly.
+      const center = kind === 'network' ? 400 : 0;
+      const candidates = [...attachments].sort(
+        (a, b) =>
+          Math.hypot(b.point[0] - center, b.point[1] - center) -
+          Math.hypot(a.point[0] - center, a.point[1] - center),
+      );
+      const selected = [candidates.shift()];
+      while (selected.length < 3 && candidates.length) {
+        candidates.sort((a, b) => {
+          const distance = (p) =>
+            Math.min(
+              ...selected.map((q) => Math.hypot(p.point[0] - q.point[0], p.point[1] - q.point[1])),
+            );
+          return distance(b) - distance(a);
+        });
+        selected.push(candidates.shift());
+      }
+      attachments.splice(0, attachments.length, ...selected.map((a, id) => ({ ...a, id })));
+    }
     bits.push('</g>');
     return { svg: bits.join(''), name, kind, attachments };
   }
@@ -618,9 +653,9 @@
       { bits, n } = layer('prefix:' + name + ':' + seed),
       { path, circle, line, rect, star, spiral, leaf } = tools(bits);
     const soft = ['nap', 'haze', 'mist', 'murk', 'quiet'].includes(kind);
-    const count = kind === 'quiet' ? 15 : kind === 'noise' ? 320 : soft ? 23 : 65;
+    const count = kind === 'quiet' ? 8 : kind === 'noise' ? 80 : soft ? 12 : 24;
     bits.push(
-      `<g data-layer="prefix" data-trait="${esc(name)}" stroke-linecap="round" stroke-linejoin="round" opacity="${soft ? 0.22 : 0.45}">`,
+      `<g data-layer="prefix" data-trait="${esc(name)}" stroke-linecap="round" stroke-linejoin="round" opacity="${soft ? 0.07 : 0.12}">`,
     );
     for (let i = 0; i < count; i++) {
       const x = n(30, 770),
@@ -871,15 +906,15 @@
         path(`M${k * 9} -${r + k * 5}Q${r + k * 18} 0 ${k * 9} ${r + k * 5}`);
     };
     // Spread the suffix's detail budget across existing family parts.
-    const detailCount = Math.min(count, family.attachments.length);
+    const detailCount = Math.min(3, count, family.attachments.length);
     for (let i = 0; i < detailCount; i++) {
       const attachment =
         family.attachments[Math.floor((i * family.attachments.length) / detailCount)];
-      const x = n(-0.25, 0.25) * attachment.extent,
-        y = n(-0.25, 0.25) * attachment.extent,
-        size = ((scale / 35) * n(0.7, 1.2) * attachment.extent) / 100;
+      // Gestures use a 55-unit nominal radius with room around the landmark. Its center sits
+      // just outside the landmark, leaving the body silhouette readable.
+      const size = (attachment.extent / 55) * (iconSize / 2);
       bits.push(
-        `<g data-family-part="${attachment.id}" transform="${attachment.transform}"><g transform="translate(${fmt(x)} ${fmt(y)}) rotate(${fmt(n(-20, 20))}) scale(${fmt(size * iconSize)}) ${mirrorTransform(seed, 'suffix', name, i)}" color="${attachment.color}">`,
+        `<g data-family-part="${attachment.id}" transform="${attachment.transform}"><g data-adornment-radius="${attachment.extent}" transform="translate(${fmt(attachment.extent * 0.6)} 0) rotate(0) scale(${fmt(size)}) ${mirrorTransform(seed, 'suffix', name, i)}" color="${attachment.color}">`,
       );
       switch (kind) {
         case 'sneeze':
@@ -1185,7 +1220,7 @@
       palette = colors.split(' ');
     const title = [prefix, family, suffix].join(' ');
     const application = familyLayer(family, seed, palette);
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 800 800"><title>${esc(title)}</title><desc>Funfection Art Lab. Semantic recipe version 3. Seed: ${esc(seed)}. ${esc(traits.prefixes[prefix][3])}; ${esc(traits.families[family][4])}; ${esc(traits.suffixes[suffix][3])}.</desc><defs><clipPath id="art-crop"><path d="${cropPath(seed)}"/></clipPath></defs><g clip-path="url(#art-crop)"><rect width="800" height="800" fill="${bg}"/>${textureLayer(prefix, seed, palette)}${application.svg}${suffixLayer(suffix, seed, palette, application)}</g></svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 800 800"><title>${esc(title)}</title><desc>Funfection Art Lab. Semantic recipe version 4. Seed: ${esc(seed)}. ${esc(traits.prefixes[prefix][3])}; ${esc(traits.families[family][4])}; ${esc(traits.suffixes[suffix][3])}.</desc><defs><clipPath id="art-crop"><path d="${cropPath(seed)}"/></clipPath></defs><g clip-path="url(#art-crop)"><rect width="800" height="800" fill="${bg}"/>${textureLayer(prefix, seed, palette)}${application.svg}${suffixLayer(suffix, seed, palette, application)}</g></svg>`;
   }
   root.FunfectionArt = {
     render,

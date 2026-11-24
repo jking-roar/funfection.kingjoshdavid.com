@@ -51,8 +51,8 @@ npx --yes prettier@3.10.1 --write "**/*.{html,css,js,cjs,json}"
 ```
 
 Format changes separately from behavior changes when possible. Keep each page's
-assets local to its route, and preserve seeded random-call order in rendering
-code so existing recipe URLs continue to produce the same artwork.
+assets local to its route, and preserve seeded random-call order within a rendering version; document intentional
+composition changes with a renderer version bump.
 
 ## Setup
 
@@ -109,7 +109,7 @@ pointer capture, and visual layout still require a browser check.
 
 `/art/` makes deterministic abstract SVG artwork from the Funfection prefix, family, and suffix categories. Select any category, generate a random recipe or a new seed variation, copy a repeatable recipe URL, or export SVG / 1600 × 1600 PNG. Everything runs locally in the browser with no API keys or external dependencies.
 
-The catalog is a snapshot of the display names from `jking-roar/infection` at commit `6826faa230564528f8c2e7c20699c4f72b5aec88`, under `app/src/main/java/com/kingjoshdavid/funfection/model/viral/enums/{Prefix,Family,Suffix}.java`. Catalog snapshots preserve enum order; dropdowns display the names alphabetically. Prefix controls palette/texture; family controls topology, density, and geometry; suffix augments recorded family parts with local gesture details. These are new art interpretations, not visuals copied from the Android app. Recipe rendering now uses semantic version 3; see below.
+The catalog is a snapshot of the display names from `jking-roar/infection` at commit `6826faa230564528f8c2e7c20699c4f72b5aec88`, under `app/src/main/java/com/kingjoshdavid/funfection/model/viral/enums/{Prefix,Family,Suffix}.java`. Catalog snapshots preserve enum order; dropdowns display the names alphabetically. Prefix controls palette/texture; family controls topology, density, and geometry; suffix augments recorded family parts with local gesture details. These are new art interpretations, not visuals copied from the Android app. Recipe rendering now uses semantic version 4; see below.
 
 To update categories, update the three JSON snapshots and `art/catalog.js` together, preserving existing order. Keep private repository access out of the browser.
 
@@ -117,13 +117,13 @@ Run art checks with `node --test tests/art.test.cjs`.
 
 Art Lab displays circular specimens at half the original width and height (one quarter of the area). SVG clipping is embedded in the artwork so both SVG and PNG downloads have transparent pixels outside the circle; the background inside the circle remains part of the recipe. Export resolutions remain 1200 × 1200 SVG / 1600 × 1600 PNG. Session history beside the current specimen keeps the latest 60 distinct recipes, including live seed edits, and clicking a thumbnail restores its controls and download content. Seed changes apply on every input event, not blur. History resets on page reload; copied recipe links remain repeatable.
 
-### Semantic art recipes (version 3)
+### Semantic art recipes (version 4)
 
 `art/traits.js` explicitly defines every prefix, family, and suffix by name. Prefixes choose a named palette and surface treatment; families choose meaningful motifs and composition; suffixes add gestures attached to the family geometry. The current interpretation is shown below the artwork. No visual mappings use enum indices, so reordering categories does not change their behavior.
 
 Examples: Frosty adds blue frost crystals; Amber adds amber resin inclusions; Bramble draws thorny branches; Gyoza draws pleated dumplings; Xebec draws three-masted ships; Crackle adds fractures; Unzip adds zipper teeth. The mappings are artistic interpretations, including coined names whose meanings are open-ended.
 
-Each category has a random stream derived from its own name and the seed. The family application records attachment IDs, exact transforms (including scale and mirroring), color, and local detail extent. Suffixes use those coordinate frames to decorate family parts rather than scattering independent symbols; Lattice uses visible mesh nodes and Nexus uses network nodes. Changing family also changes suffix placement. The suffix scale override controls local detail size relative to its family part. These records are regenerated deterministically, so recipe URLs and exports require no extra stored state. Changing a suffix preserves family geometry and prefix texture. Changing a prefix recolors the family and suffix while preserving their geometry. Editing the seed varies all three layers. Version 3 replaces independent suffix placement: existing URLs retain their selections but render the new semantic artwork. Circular clipping, transparent exports, and session history remain in place.
+Each category has a random stream derived from its own name and the seed. The family application records attachment IDs, exact transforms (including scale and mirroring), color, and local detail extent. Suffixes use those coordinate frames to decorate family parts rather than scattering independent symbols; Lattice uses visible mesh nodes and Nexus uses network nodes. Changing family also changes suffix placement. The suffix scale override controls local detail size relative to its family part. These records are regenerated deterministically, so recipe URLs and exports require no extra stored state. Changing a suffix preserves family geometry and prefix texture. Changing a prefix recolors the family and suffix while preserving their geometry. Editing the seed varies all three layers. Version 4 replaces independent suffix placement and overlapping body clusters: existing URLs retain their selections but render the new semantic artwork. Circular clipping, transparent exports, and session history remain in place.
 
 ### Icon scale configuration
 
@@ -140,4 +140,25 @@ const config = {
 };
 ```
 
-All values must be positive finite numbers. `1` restores original dimensions, `2` doubles width and height (four times area). Repeated motifs scale around their own centers, retaining seed-based placement. The Lattice and Nexus structures scale as complete compositions around the specimen center. Strokes scale with the shapes. The crop, specimen background, microscope slide, and export dimensions are unaffected. Changing the shared configuration changes rendering for existing recipe URLs. Bump the asset version when deploying config changes.
+All values must be positive finite numbers. `1` restores original dimensions, `2` doubles width and height (four times area). The centered family body and its adornments scale together around the body center. The Lattice and Nexus structures scale as complete compositions around the specimen center. Strokes scale with the shapes. The crop, specimen background, microscope slide, and export dimensions are unaffected. Changing the shared configuration changes rendering for existing recipe URLs. Bump the asset version when deploying config changes.
+
+### Body and adornment composition (version 4)
+
+Each family now draws one centered, fitted body instead of a random pile of
+repeated motifs. Prefix texture is sparse and subdued to keep the body readable.
+Lattice and Nexus retain their connected structures at specimen scale.
+
+The named `adornments` profiles in `art/traits.js` define SVG-local surface
+landmarks as `[x, y, outwardAngle]`, a body radius for fitting, and a
+family-specific suffix radius. Fable uses its two page edges and lower spine;
+Oracle uses the eye corners and upper orbital rim. Every family has an explicit
+profile. Lattice and Nexus attach to three recorded nodes in the drawn structure.
+
+The family application records the complete body frame plus each landmark's
+translation and outward rotation. Suffix rendering inherits that entire frame,
+including reflection and scale, and places at most three details at those points.
+No random canvas positions or center jitter are used for adornments. The suffix
+scale override adjusts these local details, while the family scale adjusts the
+body and its attachments together. Profiles are regenerated from the seed; no
+extra recipe state is needed. Version 4 intentionally changes existing recipe
+artwork while preserving recipe URLs, exports, and history behavior.
