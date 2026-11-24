@@ -421,12 +421,53 @@ test('suffix details reuse recorded family frames for every family and suffix', 
       const frames = [...details.matchAll(/data-family-part="(\d+)" transform="([^"]+)"/g)];
       assert.equal(
         frames.length,
-        Math.min(traits.suffixes[suffix][1], application.attachments.length),
+        Math.min(3, traits.suffixes[suffix][1], application.attachments.length),
       );
       for (const [, id, transform] of frames) {
         assert.equal(transform, application.attachments[Number(id)].transform);
       }
       assert.doesNotMatch(svg, /NaN|Infinity|undefined/);
     }
+  }
+});
+
+test('every family defines SVG landmarks and its own adornment size', () => {
+  const { traits, familyApplication } = globalThis.FunfectionArt;
+  assert.deepEqual(Object.keys(traits.adornments).sort(), [...catalog.family].sort());
+  for (const family of catalog.family) {
+    const profile = traits.adornments[family];
+    assert.ok(profile.bodyRadius > 0 && profile.suffixRadius > 0);
+    assert.ok(profile.points.length >= 2 && profile.points.length <= 3);
+    for (const point of profile.points) {
+      assert.equal(point.length, 3);
+      assert.ok(point.every(Number.isFinite));
+    }
+    const app = familyApplication(family, 'landmarks', ['#123456']);
+    for (const anchor of app.attachments) {
+      assert.ok(anchor.transform.startsWith(anchor.bodyTransform));
+      assert.ok(
+        anchor.transform.endsWith(
+          'translate(' +
+            anchor.point[0] +
+            ' ' +
+            anchor.point[1] +
+            ') rotate(' +
+            anchor.point[2] +
+            ')',
+        ),
+      );
+    }
+  }
+});
+test('reported examples have one centered body and sparse edge adornments', () => {
+  for (const recipe of [
+    { prefix: 'Zesty', family: 'Fable', suffix: 'Grizzle', seed: '15fzxqy-13fc5iv' },
+    { prefix: 'Twinkly', family: 'Oracle', suffix: 'Puffin', seed: 'g0p801-1toycst' },
+  ]) {
+    const svg = render(recipe, catalog);
+    assert.equal((svg.match(/data-family-body=/g) || []).length, 1);
+    assert.equal((svg.match(/data-adornment-radius=/g) || []).length, 3);
+    assert.match(svg, /Semantic recipe version 4/);
+    assert.doesNotMatch(svg, /NaN|undefined|Infinity/);
   }
 });

@@ -177,6 +177,489 @@
     Yowl: ['yowl', 6, 47, 'Long wavering calls'],
     Zonk: ['zonk', 7, 30, 'Angular sleepy Z marks'],
   };
-  root.FunfectionTraits = { prefixes, families, suffixes };
+  // Family-local SVG landmarks: bounds radius, adornment radius, and
+  // [x, y, outward angle] on the actual motif. The shared body transform
+  // carries these landmarks through rotation, reflection, and scaling.
+  const adornments = {
+    Spark: {
+      bodyRadius: 60,
+      suffixRadius: 16,
+      points: [
+        [-39, -23, -150],
+        [39, 23, 30],
+      ],
+    },
+    Echo: {
+      bodyRadius: 70,
+      suffixRadius: 17,
+      points: [
+        [-38, 0, 180],
+        [58, 0, 0],
+      ],
+    },
+    Mirth: {
+      bodyRadius: 45,
+      suffixRadius: 14,
+      points: [
+        [-38, 5, 180],
+        [38, 5, 0],
+      ],
+    },
+    Glitch: {
+      bodyRadius: 65,
+      suffixRadius: 13,
+      points: [
+        [-42, -32, -150],
+        [45, 26, 30],
+      ],
+    },
+    Bloom: {
+      bodyRadius: 65,
+      suffixRadius: 16,
+      points: [
+        [-50, 0, 180],
+        [50, 0, 0],
+        [0, -50, -90],
+      ],
+    },
+    Pulse: {
+      bodyRadius: 65,
+      suffixRadius: 15,
+      points: [
+        [-54, 0, 180],
+        [54, 0, 0],
+      ],
+    },
+    Aether: {
+      bodyRadius: 70,
+      suffixRadius: 14,
+      points: [
+        [-58, 18, 165],
+        [58, -18, -15],
+      ],
+    },
+    Bramble: {
+      bodyRadius: 75,
+      suffixRadius: 17,
+      points: [
+        [-50, 48, 135],
+        [40, -50, -45],
+      ],
+    },
+    Cinder: {
+      bodyRadius: 48,
+      suffixRadius: 13,
+      points: [
+        [-35, 5, 180],
+        [30, -8, 0],
+      ],
+    },
+    Drizzle: {
+      bodyRadius: 48,
+      suffixRadius: 12,
+      points: [
+        [0, -40, -80],
+        [-13, 34, 100],
+      ],
+    },
+    Ember: {
+      bodyRadius: 65,
+      suffixRadius: 14,
+      points: [
+        [-35, 5, 180],
+        [30, -8, 0],
+      ],
+    },
+    Fable: {
+      bodyRadius: 60,
+      suffixRadius: 14,
+      points: [
+        [-48, 3, 180],
+        [48, 3, 0],
+        [0, 42, 90],
+      ],
+    },
+    Glimmer: {
+      bodyRadius: 48,
+      suffixRadius: 13,
+      points: [
+        [-40, 0, 180],
+        [40, 0, 0],
+      ],
+    },
+    Hollow: {
+      bodyRadius: 60,
+      suffixRadius: 16,
+      points: [
+        [-44, 0, 180],
+        [45, 1, 0],
+      ],
+    },
+    Icicle: {
+      bodyRadius: 70,
+      suffixRadius: 12,
+      points: [
+        [-20, -30, 180],
+        [18, -30, 0],
+        [0, 60, 90],
+      ],
+    },
+    Jumble: {
+      bodyRadius: 62,
+      suffixRadius: 14,
+      points: [
+        [-35, -10, 180],
+        [44, 32, 30],
+      ],
+    },
+    Kindle: {
+      bodyRadius: 65,
+      suffixRadius: 15,
+      points: [
+        [-35, 15, 170],
+        [35, 15, 10],
+      ],
+    },
+    Lattice: {
+      bodyRadius: 280,
+      suffixRadius: 12,
+      points: [
+        [-1, 0, 180],
+        [1, 0, 0],
+      ],
+    },
+    Murmur: {
+      bodyRadius: 55,
+      suffixRadius: 13,
+      points: [
+        [-45, -10, 180],
+        [45, -10, 0],
+      ],
+    },
+    Nimbus: {
+      bodyRadius: 75,
+      suffixRadius: 16,
+      points: [
+        [-53, 8, 180],
+        [54, 8, 0],
+        [0, -40, -90],
+      ],
+    },
+    Oracle: {
+      bodyRadius: 65,
+      suffixRadius: 14,
+      points: [
+        [-55, 0, 180],
+        [55, 0, 0],
+        [0, -60, -90],
+      ],
+    },
+    Pollen: {
+      bodyRadius: 45,
+      suffixRadius: 12,
+      points: [
+        [-40, 0, 180],
+        [40, 0, 0],
+      ],
+    },
+    Quiver: {
+      bodyRadius: 60,
+      suffixRadius: 13,
+      points: [
+        [-35, 35, 150],
+        [40, 35, 30],
+      ],
+    },
+    Ripple: {
+      bodyRadius: 70,
+      suffixRadius: 14,
+      points: [
+        [-65, 0, 180],
+        [65, 0, 0],
+      ],
+    },
+    Sprocket: {
+      bodyRadius: 55,
+      suffixRadius: 14,
+      points: [
+        [-48, 0, 180],
+        [48, 0, 0],
+      ],
+    },
+    Tangle: {
+      bodyRadius: 80,
+      suffixRadius: 15,
+      points: [
+        [-50, 0, 180],
+        [48, 10, 0],
+      ],
+    },
+    Umber: {
+      bodyRadius: 65,
+      suffixRadius: 14,
+      points: [
+        [-55, 0, 180],
+        [55, 0, 0],
+      ],
+    },
+    Velour: {
+      bodyRadius: 60,
+      suffixRadius: 13,
+      points: [
+        [-42, -24, -150],
+        [42, -24, -30],
+      ],
+    },
+    Wobble: {
+      bodyRadius: 55,
+      suffixRadius: 16,
+      points: [
+        [-43, 0, 180],
+        [43, 0, 0],
+      ],
+    },
+    Xyloid: {
+      bodyRadius: 80,
+      suffixRadius: 15,
+      points: [
+        [-50, 0, 180],
+        [54, 0, 0],
+      ],
+    },
+    Yonder: {
+      bodyRadius: 80,
+      suffixRadius: 14,
+      points: [
+        [-70, 10, 180],
+        [70, 10, 0],
+      ],
+    },
+    Zephyr: {
+      bodyRadius: 72,
+      suffixRadius: 14,
+      points: [
+        [-60, 0, 180],
+        [52, 0, 0],
+      ],
+    },
+    Axon: {
+      bodyRadius: 75,
+      suffixRadius: 13,
+      points: [
+        [-53, -20, -160],
+        [53, -20, -20],
+      ],
+    },
+    Byway: {
+      bodyRadius: 65,
+      suffixRadius: 14,
+      points: [
+        [-55, 55, 135],
+        [30, -50, -60],
+        [55, -15, 0],
+      ],
+    },
+    Cwm: {
+      bodyRadius: 75,
+      suffixRadius: 14,
+      points: [
+        [-65, -42, -145],
+        [65, -42, -35],
+      ],
+    },
+    Djin: {
+      bodyRadius: 65,
+      suffixRadius: 15,
+      points: [
+        [-35, -20, 180],
+        [35, -15, 0],
+        [30, 50, 60],
+      ],
+    },
+    Eddy: {
+      bodyRadius: 62,
+      suffixRadius: 15,
+      points: [
+        [-48, 0, 180],
+        [48, 0, 0],
+      ],
+    },
+    Fjord: {
+      bodyRadius: 65,
+      suffixRadius: 14,
+      points: [
+        [-55, -55, -135],
+        [55, -55, -45],
+        [-20, 55, 120],
+      ],
+    },
+    Gyoza: {
+      bodyRadius: 60,
+      suffixRadius: 15,
+      points: [
+        [-50, 5, 180],
+        [50, 5, 0],
+      ],
+    },
+    Hyrax: {
+      bodyRadius: 65,
+      suffixRadius: 14,
+      points: [
+        [-45, 0, 180],
+        [45, 12, 0],
+      ],
+    },
+    Ibex: {
+      bodyRadius: 80,
+      suffixRadius: 13,
+      points: [
+        [-42, -49, -135],
+        [42, -49, -45],
+        [0, 35, 90],
+      ],
+    },
+    Jowl: {
+      bodyRadius: 62,
+      suffixRadius: 16,
+      points: [
+        [-45, 14, 180],
+        [45, 14, 0],
+      ],
+    },
+    Krait: {
+      bodyRadius: 78,
+      suffixRadius: 13,
+      points: [
+        [-60, 0, 180],
+        [70, 0, 0],
+      ],
+    },
+    Lyric: {
+      bodyRadius: 58,
+      suffixRadius: 13,
+      points: [
+        [-32, 25, 150],
+        [28, -45, -45],
+      ],
+    },
+    Myrrh: {
+      bodyRadius: 58,
+      suffixRadius: 15,
+      points: [
+        [-30, 0, 180],
+        [32, 10, 0],
+      ],
+    },
+    Nexus: {
+      bodyRadius: 280,
+      suffixRadius: 12,
+      points: [
+        [-1, 0, 180],
+        [1, 0, 0],
+      ],
+    },
+    Oxbow: {
+      bodyRadius: 70,
+      suffixRadius: 14,
+      points: [
+        [-40, 48, 125],
+        [40, 48, 55],
+      ],
+    },
+    Pylon: {
+      bodyRadius: 65,
+      suffixRadius: 14,
+      points: [
+        [-36, 55, 150],
+        [36, 55, 30],
+        [0, -55, -90],
+      ],
+    },
+    Quark: {
+      bodyRadius: 60,
+      suffixRadius: 13,
+      points: [
+        [-50, 0, 180],
+        [50, 0, 0],
+      ],
+    },
+    Rhyme: {
+      bodyRadius: 60,
+      suffixRadius: 14,
+      points: [
+        [-44, 0, 180],
+        [50, 0, 0],
+      ],
+    },
+    Skald: {
+      bodyRadius: 75,
+      suffixRadius: 14,
+      points: [
+        [-40, -45, -135],
+        [40, -25, -30],
+        [-20, 50, 90],
+      ],
+    },
+    Tizzy: {
+      bodyRadius: 58,
+      suffixRadius: 14,
+      points: [
+        [-46, 0, 180],
+        [46, 0, 0],
+      ],
+    },
+    Uvula: {
+      bodyRadius: 60,
+      suffixRadius: 13,
+      points: [
+        [-45, 30, 150],
+        [45, 30, 30],
+      ],
+    },
+    Voxel: {
+      bodyRadius: 48,
+      suffixRadius: 13,
+      points: [
+        [-35, 0, 180],
+        [35, 0, 0],
+        [0, -40, -90],
+      ],
+    },
+    Wrack: {
+      bodyRadius: 58,
+      suffixRadius: 14,
+      points: [
+        [-45, -40, -135],
+        [42, -32, -45],
+        [22, 44, 60],
+      ],
+    },
+    Xebec: {
+      bodyRadius: 80,
+      suffixRadius: 13,
+      points: [
+        [-62, 24, 180],
+        [62, 24, 0],
+        [0, -47, -90],
+      ],
+    },
+    Yolk: {
+      bodyRadius: 60,
+      suffixRadius: 14,
+      points: [
+        [-50, -5, 180],
+        [53, -4, 0],
+      ],
+    },
+    Zymic: {
+      bodyRadius: 80,
+      suffixRadius: 13,
+      points: [
+        [-27, 0, 180],
+        [39, -18, 0],
+      ],
+    },
+  };
+  root.FunfectionTraits = { prefixes, families, suffixes, adornments };
   if (typeof module !== 'undefined') module.exports = root.FunfectionTraits;
 })(globalThis);
