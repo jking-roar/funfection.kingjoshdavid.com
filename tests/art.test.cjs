@@ -244,7 +244,7 @@ test('category changes preserve unrelated random layers; enum order does not mat
   assert.notEqual(a.suffix, b.suffix);
   const c = layers({ ...base, family: 'Gyoza' });
   assert.equal(a.prefix, c.prefix);
-  assert.equal(a.suffix, c.suffix);
+  assert.notEqual(a.suffix, c.suffix);
   assert.equal(
     render(base, catalog),
     render(
@@ -405,5 +405,28 @@ test('all motif layers contain mirroring transforms and remain reproducible', ()
       next = svg.indexOf('<g data-layer="', start + 1);
     const layer = svg.slice(start, next < 0 ? svg.lastIndexOf('</g></svg>') : next);
     assert.match(layer, /scale\((?:1|-1) (?:1|-1)\)/);
+  }
+});
+
+test('suffix details reuse recorded family frames for every family and suffix', () => {
+  const { familyApplication, traits } = globalThis.FunfectionArt;
+  const palette = traits.prefixes.Neon[1].split(' ');
+  for (const family of catalog.family) {
+    const application = familyApplication(family, base.seed, palette);
+    assert.deepEqual(application, familyApplication(family, base.seed, palette));
+    assert.ok(application.attachments.length > 0);
+    for (const suffix of catalog.suffix) {
+      const svg = render({ ...base, family, suffix }, catalog);
+      const details = svg.slice(svg.indexOf('<g data-layer="suffix"'));
+      const frames = [...details.matchAll(/data-family-part="(\d+)" transform="([^"]+)"/g)];
+      assert.equal(
+        frames.length,
+        Math.min(traits.suffixes[suffix][1], application.attachments.length),
+      );
+      for (const [, id, transform] of frames) {
+        assert.equal(transform, application.attachments[Number(id)].transform);
+      }
+      assert.doesNotMatch(svg, /NaN|Infinity|undefined/);
+    }
   }
 });
