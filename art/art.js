@@ -1,4 +1,4 @@
-/* Semantic renderer v2. Family geometry drives suffix attachment; enum order has no visual meaning. */
+/* Semantic renderer v3. Family geometry drives suffix attachment; enum order has no visual meaning. */
 (function (root) {
   'use strict';
   const traits =
