@@ -1029,7 +1029,7 @@
     }[name];
   }
   function countScale(count) {
-    return [0.95, 0.8, 0.68, 0.6, 0.55, 0.51, 0.48, 0.45, 0.42][count - 1];
+    return [0.95, 0.86, 0.8, 0.75, 0.71, 0.68, 0.65, 0.62, 0.6][count - 1];
   }
   // Suffix details use the recorded family coordinate frames, never canvas positions.
   function suffixLayer(name, seed, palette, family, sceneScale = 1) {
@@ -1384,7 +1384,7 @@
           bestDistance = distance;
         }
       }
-      instances.push({ ...best, scale: countScale(count) * (0.96 + rng() * 0.08) });
+      instances.push({ ...best, scale: Math.max(0.6, countScale(count) * (0.96 + rng() * 0.08)) });
     }
     return instances;
   }

@@ -552,7 +552,7 @@ test('plate layouts span one to nine smaller, spread-out instances and permit ov
     counts.add(layout.length);
     for (let j = 0; j < layout.length; j++) {
       const p = layout[j];
-      assert.ok(p.scale >= 0.4 && p.scale <= 0.99);
+      assert.ok(p.scale >= 0.6 && p.scale <= 0.99);
       assert.ok(Math.hypot(p.x - 400, p.y - 400) <= 220.01);
       for (const q of layout.slice(0, j)) {
         const distance = Math.hypot(p.x - q.x, p.y - q.y);
@@ -575,7 +575,7 @@ test('plate layouts span one to nine smaller, spread-out instances and permit ov
 test('count scaling strictly decreases and sparse plates have larger bodies', () => {
   const { countScale } = globalThis.FunfectionArt;
   assert.equal(countScale(1), 0.95);
-  assert.equal(countScale(2), 0.8);
+  assert.equal(countScale(2), 0.86);
   for (let count = 2; count <= 9; count++) assert.ok(countScale(count) < countScale(count - 1));
 });
 test('every suffix has a finite native glyph radius', () => {

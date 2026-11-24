@@ -187,7 +187,7 @@ colors and poses exactly. Version 5 intentionally updates existing recipe art.
 
 The seed chooses one to nine smaller family instances. Centers use best-of-six
 disk sampling to spread across the plate without forbidding body overlap.
-Each instance is 40–58% of the previous body's linear size; connected mesh/network
+Each instance uses 60–99% of the fitted body's linear size; connected mesh/network
 structures receive additional fitting. Each body and its suffix details share
 one outer placement transform, so adornments remain attached. Instances are
 painted back-to-front as complete body/adornment groups, allowing natural overlap.
@@ -197,8 +197,9 @@ of category choices. Existing recipe URLs intentionally render the new layout.
 
 ### Count-dependent size and adornment legibility
 
-Nominal plate multipliers for counts 1–9 are 0.95, 0.80, 0.68, 0.60, 0.55,
-0.51, 0.48, 0.45, and 0.42, with ±4% seeded instance variation. Sparse plates
+Nominal plate multipliers for counts 1–9 are 0.95, 0.86, 0.80, 0.75, 0.71,
+0.68, 0.65, 0.62, and 0.60, with ±4% seeded instance variation clamped to a
+minimum final count multiplier of 0.60. Sparse plates
 use a smaller center-placement region to accommodate their larger bodies.
 Suffixes normalize by each gesture's native radius, and receive a minimum
 18-unit visible nominal radius after family and instance scaling (before explicit
