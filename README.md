@@ -109,7 +109,7 @@ pointer capture, and visual layout still require a browser check.
 
 `/art/` makes deterministic abstract SVG artwork from the Funfection prefix, family, and suffix categories. Select any category, generate a random recipe or a new seed variation, copy a repeatable recipe URL, or export SVG / 1600 × 1600 PNG. Everything runs locally in the browser with no API keys or external dependencies.
 
-The catalog is a snapshot of the display names from `jking-roar/infection` at commit `6826faa230564528f8c2e7c20699c4f72b5aec88`, under `app/src/main/java/com/kingjoshdavid/funfection/model/viral/enums/{Prefix,Family,Suffix}.java`. Catalog snapshots preserve enum order; dropdowns display the names alphabetically. Prefix controls palette/texture; family controls topology, density, and geometry; suffix augments recorded family parts with local gesture details. These are new art interpretations, not visuals copied from the Android app. Recipe rendering now uses semantic version 4; see below.
+The catalog is a snapshot of the display names from `jking-roar/infection` at commit `6826faa230564528f8c2e7c20699c4f72b5aec88`, under `app/src/main/java/com/kingjoshdavid/funfection/model/viral/enums/{Prefix,Family,Suffix}.java`. Catalog snapshots preserve enum order; dropdowns display the names alphabetically. Prefix controls palette/texture; family controls topology, density, and geometry; suffix augments recorded family parts with local gesture details. These are new art interpretations, not visuals copied from the Android app. Recipe rendering now uses semantic version 5; see below.
 
 To update categories, update the three JSON snapshots and `art/catalog.js` together, preserving existing order. Keep private repository access out of the browser.
 
@@ -162,3 +162,23 @@ scale override adjusts these local details, while the family scale adjusts the
 body and its attachments together. Profiles are regenerated from the seed; no
 extra recipe state is needed. Version 4 intentionally changes existing recipe
 artwork while preserving recipe URLs, exports, and history behavior.
+
+### Seeded adornment poses and palette variation (version 5)
+
+A dedicated attachment stream selects one or two distinct family landmarks.
+Each attachment records a rotation range (22 degrees at top/bottom landmarks,
+35 degrees at side landmarks) and a jitter fraction (0.18 of its detail radius).
+Family profiles may override these through `rotationRange` and `jitter`.
+Suffix details get a bounded local rotation, outward/tangential offset, and
+eight-percent size variation, all inherited through the body's transform.
+
+Lattice detail radii compensate for mesh scaling, keeping a minimum 56-unit
+radius in specimen space at the default icon scale. Eligible mesh attachment
+nodes remain within 205 units of the center so larger adornments have room
+inside the crop. Explicit scale overrides still apply.
+
+Each prefix palette receives one shared, seeded hue rotation within ±12 degrees.
+Background and palette colors preserve HSL saturation and lightness, so neutrals
+stay neutral and the palette keeps its relationships. Palette, body, attachment,
+and gesture random streams are independent. Reopening a recipe reproduces its
+colors and poses exactly. Version 5 intentionally updates existing recipe art.

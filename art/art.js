@@ -1,4 +1,4 @@
-/* Semantic renderer v4. Family geometry drives suffix attachment; enum order has no visual meaning. */
+/* Semantic renderer v5. Family geometry drives suffix attachment; enum order has no visual meaning. */
 (function (root) {
   'use strict';
   const traits =
@@ -26,6 +26,76 @@
       t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
+  }
+  // A shared hue offset preserves each prefix palette's internal relationships.
+  // HSL rotation leaves saturation and lightness (including neutral colors) intact.
+  function rotateHue(hex, degrees) {
+    const rgb = hex
+      .slice(1)
+      .match(/../g)
+      .map((c) => parseInt(c, 16) / 255);
+    const max = Math.max(...rgb),
+      min = Math.min(...rgb),
+      delta = max - min;
+    if (delta === 0) return hex;
+    const lightness = (max + min) / 2;
+    const saturation = delta / (1 - Math.abs(2 * lightness - 1));
+    let hue =
+      max === rgb[0]
+        ? (rgb[1] - rgb[2]) / delta
+        : max === rgb[1]
+          ? (rgb[2] - rgb[0]) / delta + 2
+          : (rgb[0] - rgb[1]) / delta + 4;
+    hue = (((hue * 60 + degrees) % 360) + 360) % 360;
+    const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+    const x = chroma * (1 - Math.abs(((hue / 60) % 2) - 1)),
+      m = lightness - chroma / 2;
+    const sector = Math.floor(hue / 60);
+    const channels = [
+      [chroma, x, 0],
+      [x, chroma, 0],
+      [0, chroma, x],
+      [0, x, chroma],
+      [x, 0, chroma],
+      [chroma, 0, x],
+    ][sector];
+    return (
+      '#' +
+      channels
+        .map((c) =>
+          Math.round((c + m) * 255)
+            .toString(16)
+            .padStart(2, '0'),
+        )
+        .join('')
+    );
+  }
+  function paletteFor(prefix, seed) {
+    const [background, colors] = traits.prefixes[prefix];
+    const hue = (random('palette:v1:' + prefix + ':' + seed)() * 2 - 1) * 12;
+    return {
+      hue,
+      background: rotateHue(background, hue),
+      colors: colors.split(' ').map((color) => rotateHue(color, hue)),
+    };
+  }
+  // Slot selection and pose have their own stream, leaving body and gesture
+  // geometry untouched. Jitter is in the landmark's local outward/tangent frame.
+  function adornmentPlacements(family, suffix, seed) {
+    const rng = random('attachments:v1:' + family.name + ':' + suffix + ':' + seed);
+    const slots = [...family.attachments];
+    for (let i = slots.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [slots[i], slots[j]] = [slots[j], slots[i]];
+    }
+    const count = Math.min(slots.length, 1 + Math.floor(rng() * 2));
+    return slots.slice(0, count).map((attachment) => ({
+      attachment,
+      rotation: (rng() * 2 - 1) * attachment.rotationRange,
+      outward: attachment.extent * (0.65 + (rng() * 2 - 1) * attachment.jitter),
+      tangent: attachment.extent * (rng() * 2 - 1) * attachment.jitter,
+      scale: 0.92 + rng() * 0.16,
+    }));
   }
   // Mirroring uses a separate stream: it cannot perturb placement, scale, or crop.
   function mirroringParameters(seed) {
@@ -109,6 +179,9 @@
         color,
         extent,
         point: [...point],
+        rotationRange:
+          profile.rotationRange ?? (Math.abs(Math.sin((angle * Math.PI) / 180)) > 0.7 ? 22 : 35),
+        jitter: profile.jitter ?? 0.18,
       };
       attachments.push(attachment);
       return attachment;
@@ -153,7 +226,7 @@
               `${structureTransform} translate(400 400) rotate(${fmt(rotation)}) scale(${fmt(size)})`,
               palette[(row + col) % palette.length],
               [fmt(x), fmt(y), (Math.atan2(y, x) * 180) / Math.PI],
-              Math.min(profile.suffixRadius, spacing * 0.22),
+              Math.max(56, profile.suffixRadius * 1.5) / fmt(size),
             );
           }
           bits.push('</g>');
@@ -625,7 +698,14 @@
       // Keep three well-separated peripheral nodes, rather than internal
       // intersections. The stored frames still match the SVG node exactly.
       const center = kind === 'network' ? 400 : 0;
-      const candidates = [...attachments].sort(
+      const eligible =
+        kind === 'lattice'
+          ? attachments.filter((a) => {
+              const scale = Number(a.bodyTransform.match(/scale\(([\d.]+)\)$/)[1]);
+              return Math.hypot(a.point[0], a.point[1]) * scale <= 205;
+            })
+          : attachments;
+      const candidates = [...(eligible.length >= 3 ? eligible : attachments)].sort(
         (a, b) =>
           Math.hypot(b.point[0] - center, b.point[1] - center) -
           Math.hypot(a.point[0] - center, a.point[1] - center),
@@ -890,7 +970,7 @@
   }
   // Suffix details use the recorded family coordinate frames, never canvas positions.
   function suffixLayer(name, seed, palette, family) {
-    const [kind, count, scale] = traits.suffixes[name],
+    const [kind] = traits.suffixes[name],
       iconSize = iconScale('suffix', name),
       { bits, n } = layer('suffix:' + name + ':' + seed),
       { path, circle, line, rect, star, spiral } = tools(bits);
@@ -905,16 +985,12 @@
       for (let k = 0; k < 3; k++)
         path(`M${k * 9} -${r + k * 5}Q${r + k * 18} 0 ${k * 9} ${r + k * 5}`);
     };
-    // Spread the suffix's detail budget across existing family parts.
-    const detailCount = Math.min(3, count, family.attachments.length);
-    for (let i = 0; i < detailCount; i++) {
-      const attachment =
-        family.attachments[Math.floor((i * family.attachments.length) / detailCount)];
-      // Gestures use a 55-unit nominal radius with room around the landmark. Its center sits
-      // just outside the landmark, leaving the body silhouette readable.
-      const size = (attachment.extent / 55) * (iconSize / 2);
+    const placements = adornmentPlacements(family, name, seed);
+    for (let i = 0; i < placements.length; i++) {
+      const { attachment, rotation, outward, tangent, scale: variation } = placements[i];
+      const size = (attachment.extent / 55) * (iconSize / 2) * variation;
       bits.push(
-        `<g data-family-part="${attachment.id}" transform="${attachment.transform}"><g data-adornment-radius="${attachment.extent}" transform="translate(${fmt(attachment.extent * 0.6)} 0) rotate(0) scale(${fmt(size)}) ${mirrorTransform(seed, 'suffix', name, i)}" color="${attachment.color}">`,
+        `<g data-family-part="${attachment.id}" transform="${attachment.transform}"><g data-adornment-radius="${attachment.extent}" data-rotation="${fmt(rotation)}" transform="translate(${fmt(outward)} ${fmt(tangent)}) rotate(${fmt(rotation)}) scale(${fmt(size)}) ${mirrorTransform(seed, 'suffix', name, i)}" color="${attachment.color}">`,
       );
       switch (kind) {
         case 'sneeze':
@@ -1216,17 +1292,19 @@
       seed = String(recipe.seed);
     for (const k of ['prefix', 'family', 'suffix'])
       if (!catalog[k].includes(recipe[k])) throw Error('Unknown ' + k);
-    const [bg, colors] = traits.prefixes[prefix],
-      palette = colors.split(' ');
+    const { background: bg, colors: palette } = paletteFor(prefix, seed);
     const title = [prefix, family, suffix].join(' ');
     const application = familyLayer(family, seed, palette);
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 800 800"><title>${esc(title)}</title><desc>Funfection Art Lab. Semantic recipe version 4. Seed: ${esc(seed)}. ${esc(traits.prefixes[prefix][3])}; ${esc(traits.families[family][4])}; ${esc(traits.suffixes[suffix][3])}.</desc><defs><clipPath id="art-crop"><path d="${cropPath(seed)}"/></clipPath></defs><g clip-path="url(#art-crop)"><rect width="800" height="800" fill="${bg}"/>${textureLayer(prefix, seed, palette)}${application.svg}${suffixLayer(suffix, seed, palette, application)}</g></svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 800 800"><title>${esc(title)}</title><desc>Funfection Art Lab. Semantic recipe version 5. Seed: ${esc(seed)}. ${esc(traits.prefixes[prefix][3])}; ${esc(traits.families[family][4])}; ${esc(traits.suffixes[suffix][3])}.</desc><defs><clipPath id="art-crop"><path d="${cropPath(seed)}"/></clipPath></defs><g clip-path="url(#art-crop)"><rect width="800" height="800" fill="${bg}"/>${textureLayer(prefix, seed, palette)}${application.svg}${suffixLayer(suffix, seed, palette, application)}</g></svg>`;
   }
   root.FunfectionArt = {
     render,
     hash,
     traits,
     familyApplication: familyLayer,
+    adornmentPlacements,
+    paletteFor,
+    rotateHue,
     cropPath,
     cropParameters,
     iconScale,

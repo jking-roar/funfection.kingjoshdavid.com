@@ -421,7 +421,7 @@ test('suffix details reuse recorded family frames for every family and suffix', 
       const frames = [...details.matchAll(/data-family-part="(\d+)" transform="([^"]+)"/g)];
       assert.equal(
         frames.length,
-        Math.min(3, traits.suffixes[suffix][1], application.attachments.length),
+        globalThis.FunfectionArt.adornmentPlacements(application, suffix, base.seed).length,
       );
       for (const [, id, transform] of frames) {
         assert.equal(transform, application.attachments[Number(id)].transform);
@@ -466,8 +466,70 @@ test('reported examples have one centered body and sparse edge adornments', () =
   ]) {
     const svg = render(recipe, catalog);
     assert.equal((svg.match(/data-family-body=/g) || []).length, 1);
-    assert.equal((svg.match(/data-adornment-radius=/g) || []).length, 3);
-    assert.match(svg, /Semantic recipe version 4/);
+    assert.ok([1, 2].includes((svg.match(/data-adornment-radius=/g) || []).length));
+    assert.match(svg, /Semantic recipe version 5/);
     assert.doesNotMatch(svg, /NaN|undefined|Infinity/);
+  }
+});
+
+test('seeded attachment selection and poses vary within local slot limits', () => {
+  const { familyApplication, adornmentPlacements } = globalThis.FunfectionArt;
+  const family = familyApplication('Fable', 'fixed-body', ['#123456']);
+  const slots = new Set(),
+    rotations = new Set();
+  for (let i = 0; i < 40; i++) {
+    const seed = 'pose-' + i;
+    const poses = adornmentPlacements(family, 'Grizzle', seed);
+    assert.deepEqual(poses, adornmentPlacements(family, 'Grizzle', seed));
+    assert.ok(poses.length >= 1 && poses.length <= 2);
+    assert.equal(new Set(poses.map((p) => p.attachment.id)).size, poses.length);
+    for (const pose of poses) {
+      const a = pose.attachment;
+      slots.add(a.id);
+      rotations.add(pose.rotation);
+      assert.ok(Math.abs(pose.rotation) <= a.rotationRange);
+      assert.ok(Math.abs(pose.tangent) <= a.extent * a.jitter);
+      assert.ok(pose.outward >= a.extent * (0.65 - a.jitter));
+      assert.ok(pose.scale >= 0.92 && pose.scale <= 1.08);
+    }
+  }
+  assert.equal(slots.size, 3);
+  assert.ok(rotations.size > 20);
+});
+test('Lattice detail radius remains legible independently of mesh spacing and size', () => {
+  const { familyApplication } = globalThis.FunfectionArt;
+  for (let i = 0; i < 80; i++) {
+    const family = familyApplication('Lattice', 'mesh-size-' + i, ['#123456']);
+    for (const a of family.attachments) {
+      const scale = Number(a.bodyTransform.match(/scale\(([\d.]+)\)$/)[1]);
+      assert.ok(a.extent * scale >= 55.9);
+      assert.ok(Math.hypot(a.point[0], a.point[1]) * scale <= 205.1);
+    }
+  }
+});
+test('palette hue varies slightly by seed and preserves color relationships', () => {
+  const { paletteFor, rotateHue, traits } = globalThis.FunfectionArt;
+  assert.equal(rotateHue('#808080', 12), '#808080');
+  assert.equal(rotateHue('#ffffff', -12), '#ffffff');
+  assert.equal(rotateHue('#ff0000', 120), '#00ff00');
+  for (const prefix of catalog.prefix) {
+    const a = paletteFor(prefix, 'palette-a'),
+      b = paletteFor(prefix, 'palette-b');
+    assert.deepEqual(a, paletteFor(prefix, 'palette-a'));
+    assert.notEqual(a.hue, b.hue);
+    assert.ok(Math.abs(a.hue) <= 12 && Math.abs(b.hue) <= 12);
+    const originals = traits.prefixes[prefix][1].split(' ');
+    a.colors.forEach((color, i) => {
+      assert.match(color, /^#[0-9a-f]{6}$/i);
+      const channels = (hex) =>
+        hex
+          .slice(1)
+          .match(/../g)
+          .map((c) => parseInt(c, 16));
+      const old = channels(originals[i]),
+        next = channels(color);
+      assert.equal(Math.min(...old), Math.min(...next));
+      assert.equal(Math.max(...old), Math.max(...next));
+    });
   }
 });
