@@ -417,7 +417,9 @@ test('suffix details reuse recorded family frames for every family and suffix', 
     assert.ok(application.attachments.length > 0);
     for (const suffix of catalog.suffix) {
       const svg = render({ ...base, family, suffix }, catalog);
-      const details = svg.slice(svg.indexOf('<g data-layer="suffix"'));
+      const start = svg.indexOf('<g data-layer="suffix"');
+      const next = svg.indexOf('<g data-layer=', start + 1);
+      const details = svg.slice(start, next < 0 ? svg.length : next);
       const frames = [...details.matchAll(/data-family-part="(\d+)" transform="([^"]+)"/g)];
       assert.equal(
         frames.length,
@@ -465,9 +467,14 @@ test('reported examples have one centered body and sparse edge adornments', () =
     { prefix: 'Twinkly', family: 'Oracle', suffix: 'Puffin', seed: 'g0p801-1toycst' },
   ]) {
     const svg = render(recipe, catalog);
-    assert.equal((svg.match(/data-family-body=/g) || []).length, 1);
-    assert.ok([1, 2].includes((svg.match(/data-adornment-radius=/g) || []).length));
-    assert.match(svg, /Semantic recipe version 5/);
+    assert.equal(
+      (svg.match(/data-family-body=/g) || []).length,
+      globalThis.FunfectionArt.instanceLayout(recipe.seed).length,
+    );
+    const count = globalThis.FunfectionArt.instanceLayout(recipe.seed).length;
+    const details = (svg.match(/data-adornment-radius=/g) || []).length;
+    assert.ok(details >= count && details <= count * 2);
+    assert.match(svg, /Semantic recipe version 6/);
     assert.doesNotMatch(svg, /NaN|undefined|Infinity/);
   }
 });
@@ -532,4 +539,35 @@ test('palette hue varies slightly by seed and preserves color relationships', ()
       assert.equal(Math.max(...old), Math.max(...next));
     });
   }
+});
+
+test('plate layouts span one to nine smaller, spread-out instances and permit overlap', () => {
+  const { instanceLayout } = globalThis.FunfectionArt;
+  const counts = new Set();
+  let overlaps = 0;
+  for (let i = 0; i < 200; i++) {
+    const seed = 'plate-' + i,
+      layout = instanceLayout(seed);
+    assert.deepEqual(layout, instanceLayout(seed));
+    counts.add(layout.length);
+    for (let j = 0; j < layout.length; j++) {
+      const p = layout[j];
+      assert.ok(p.scale >= 0.39 && p.scale <= 0.59);
+      assert.ok(Math.hypot(p.x - 400, p.y - 400) <= 220.01);
+      for (const q of layout.slice(0, j)) {
+        const distance = Math.hypot(p.x - q.x, p.y - q.y);
+        assert.ok(distance > 35, 'centers must not collapse into a pile');
+        if (distance < 170 * (p.scale + q.scale)) overlaps++;
+      }
+    }
+    const svg = render({ ...base, seed }, catalog);
+    assert.equal((svg.match(/data-instance=/g) || []).length, layout.length);
+    assert.equal((svg.match(/data-layer="family"/g) || []).length, layout.length);
+    assert.equal((svg.match(/data-layer="suffix"/g) || []).length, layout.length);
+  }
+  assert.deepEqual(
+    [...counts].sort((a, b) => a - b),
+    [1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.ok(overlaps > 0);
 });

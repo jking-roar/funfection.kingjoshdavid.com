@@ -1,4 +1,4 @@
-/* Semantic renderer v5. Family geometry drives suffix attachment; enum order has no visual meaning. */
+/* Semantic renderer v6. Family geometry drives suffix attachment; enum order has no visual meaning. */
 (function (root) {
   'use strict';
   const traits =
@@ -1286,6 +1286,32 @@
     }
     return d + 'Z';
   }
+  // Best-of-several sampling spreads centers without forbidding silhouette overlap.
+  // Layout depends only on the seed, so changing a category cannot reshuffle it.
+  function instanceLayout(seed) {
+    const rng = random('plate-instances:v1:' + seed);
+    const count = 1 + Math.floor(rng() * 9);
+    const instances = [];
+    for (let i = 0; i < count; i++) {
+      let best,
+        bestDistance = -1;
+      for (let candidate = 0; candidate < 6; candidate++) {
+        const angle = rng() * Math.PI * 2;
+        const radius = Math.sqrt(rng()) * (count === 1 ? 65 : 220);
+        const x = 400 + Math.cos(angle) * radius,
+          y = 400 + Math.sin(angle) * radius;
+        const distance = instances.length
+          ? Math.min(...instances.map((p) => Math.hypot(p.x - x, p.y - y)))
+          : 1;
+        if (distance > bestDistance) {
+          best = { x, y };
+          bestDistance = distance;
+        }
+      }
+      instances.push({ ...best, scale: (count <= 3 ? 0.53 : 0.44) * (0.9 + rng() * 0.2) });
+    }
+    return instances;
+  }
   // Recipe validation and final SVG composition.
   function render(recipe, catalog) {
     const { prefix, family, suffix } = recipe,
@@ -1294,8 +1320,19 @@
       if (!catalog[k].includes(recipe[k])) throw Error('Unknown ' + k);
     const { background: bg, colors: palette } = paletteFor(prefix, seed);
     const title = [prefix, family, suffix].join(' ');
-    const application = familyLayer(family, seed, palette);
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 800 800"><title>${esc(title)}</title><desc>Funfection Art Lab. Semantic recipe version 5. Seed: ${esc(seed)}. ${esc(traits.prefixes[prefix][3])}; ${esc(traits.families[family][4])}; ${esc(traits.suffixes[suffix][3])}.</desc><defs><clipPath id="art-crop"><path d="${cropPath(seed)}"/></clipPath></defs><g clip-path="url(#art-crop)"><rect width="800" height="800" fill="${bg}"/>${textureLayer(prefix, seed, palette)}${application.svg}${suffixLayer(suffix, seed, palette, application)}</g></svg>`;
+    const instances = instanceLayout(seed);
+    const specimenArt = instances
+      .map((instance, index) => {
+        const instanceSeed = index === 0 ? seed : seed + ':instance:' + index;
+        const application = familyLayer(family, instanceSeed, palette);
+        // Meshes fill a wider native frame than an individual silhouette.
+        const scale =
+          instance.scale * (['lattice', 'network'].includes(application.kind) ? 0.65 : 1);
+        const transform = `translate(${fmt(instance.x)} ${fmt(instance.y)}) scale(${fmt(scale)}) translate(-400 -400)`;
+        return `<g data-instance="${index}" transform="${transform}">${application.svg}${suffixLayer(suffix, instanceSeed, palette, application)}</g>`;
+      })
+      .join('');
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 800 800"><title>${esc(title)}</title><desc>Funfection Art Lab. Semantic recipe version 6. Seed: ${esc(seed)}. ${esc(traits.prefixes[prefix][3])}; ${esc(traits.families[family][4])}; ${esc(traits.suffixes[suffix][3])}.</desc><defs><clipPath id="art-crop"><path d="${cropPath(seed)}"/></clipPath></defs><g clip-path="url(#art-crop)"><rect width="800" height="800" fill="${bg}"/>${textureLayer(prefix, seed, palette)}${specimenArt}</g></svg>`;
   }
   root.FunfectionArt = {
     render,
@@ -1303,6 +1340,7 @@
     traits,
     familyApplication: familyLayer,
     adornmentPlacements,
+    instanceLayout,
     paletteFor,
     rotateHue,
     cropPath,
