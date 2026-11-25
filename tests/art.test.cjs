@@ -474,7 +474,7 @@ test('reported examples have one centered body and sparse edge adornments', () =
     const count = globalThis.FunfectionArt.instanceLayout(recipe.seed).length;
     const details = (svg.match(/data-adornment-radius=/g) || []).length;
     assert.ok(details >= count && details <= count * 2);
-    assert.match(svg, /Semantic recipe version 6/);
+    assert.match(svg, /Semantic recipe version 7/);
     assert.doesNotMatch(svg, /NaN|undefined|Infinity/);
   }
 });
@@ -598,4 +598,63 @@ test('adornment sizing compensates for complete instance scaling', () => {
       }
     }
   }
+});
+
+test('Jumble varies native pieces and arrangement deterministically within body bounds', () => {
+  const { jumbleGeometry, familyApplication } = globalThis.FunfectionArt;
+  const kinds = new Set(),
+    counts = new Set(),
+    outputs = new Set();
+  for (let i = 0; i < 50; i++) {
+    const seed = 'jumble-' + i,
+      shapes = jumbleGeometry(seed);
+    assert.deepEqual(shapes, jumbleGeometry(seed));
+    counts.add(shapes.length);
+    outputs.add(JSON.stringify(shapes));
+    const family = familyApplication('Jumble', seed, ['#123456', '#abcdef']);
+    assert.equal(family.attachments.length, shapes.length);
+    shapes.forEach((shape, index) => {
+      kinds.add(shape.kind);
+      assert.ok(
+        Math.hypot(shape.x, shape.y) +
+          shape.radius *
+            (shape.kind === 'rectangle' ? Math.hypot(1, shape.aspect) : Math.max(1, shape.aspect)) <
+          62,
+      );
+      assert.equal(family.attachments[index].point[0], shape.radius);
+      assert.ok(
+        family.attachments[index].bodyTransform.includes(
+          'translate(' + shape.x + ' ' + shape.y + ') rotate(' + shape.rotation + ')',
+        ),
+      );
+    });
+  }
+  assert.equal(kinds.size, 6);
+  assert.deepEqual([...counts].sort(), [3, 4, 5]);
+  assert.equal(outputs.size, 50);
+});
+
+test('all visible artwork strokes have display-space floors, including raw SVG motifs', () => {
+  for (const family of catalog.family) {
+    const svg = render({ ...base, family }, catalog);
+    for (const element of svg.matchAll(/<(?:path|circle|ellipse|rect|line|polygon)\b[^>]*>/g)) {
+      if (!/stroke="(?!none")[^"]+"/.test(element[0])) continue;
+      assert.match(element[0], /vector-effect="non-scaling-stroke"/);
+      assert.ok(Number(element[0].match(/stroke-width="([^"]+)"/)[1]) >= 0.85);
+    }
+  }
+  const svg = render(base, catalog);
+  assert.match(svg, /stroke-width="1.5" vector-effect="non-scaling-stroke"/);
+  assert.match(svg, /stroke-width="2" vector-effect="non-scaling-stroke"/);
+});
+test('history simplifies fine detail and keeps one-pixel non-scaling strokes', () => {
+  const full = render(base, catalog),
+    thumb = render(base, catalog, { thumbnail: true });
+  assert.doesNotMatch(thumb, /data-layer="prefix"/);
+  assert.ok(thumb.length < full.length);
+  for (const element of thumb.matchAll(/<(?:path|circle|ellipse|rect|line|polygon)\b[^>]*>/g)) {
+    if (/stroke="(?!none")[^"]+"/.test(element[0])) assert.match(element[0], /stroke-width="1"/);
+  }
+  assert.match(thumb, /data-layer="family"/);
+  assert.match(thumb, /data-layer="suffix"/);
 });
