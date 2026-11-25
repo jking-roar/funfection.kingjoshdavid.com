@@ -633,3 +633,28 @@ test('Jumble varies native pieces and arrangement deterministically within body 
   assert.deepEqual([...counts].sort(), [3, 4, 5]);
   assert.equal(outputs.size, 50);
 });
+
+test('all visible artwork strokes have display-space floors, including raw SVG motifs', () => {
+  for (const family of catalog.family) {
+    const svg = render({ ...base, family }, catalog);
+    for (const element of svg.matchAll(/<(?:path|circle|ellipse|rect|line|polygon)\b[^>]*>/g)) {
+      if (!/stroke="(?!none")[^"]+"/.test(element[0])) continue;
+      assert.match(element[0], /vector-effect="non-scaling-stroke"/);
+      assert.ok(Number(element[0].match(/stroke-width="([^"]+)"/)[1]) >= 0.85);
+    }
+  }
+  const svg = render(base, catalog);
+  assert.match(svg, /stroke-width="1.5" vector-effect="non-scaling-stroke"/);
+  assert.match(svg, /stroke-width="2" vector-effect="non-scaling-stroke"/);
+});
+test('history simplifies fine detail and keeps one-pixel non-scaling strokes', () => {
+  const full = render(base, catalog),
+    thumb = render(base, catalog, { thumbnail: true });
+  assert.doesNotMatch(thumb, /data-layer="prefix"/);
+  assert.ok(thumb.length < full.length);
+  for (const element of thumb.matchAll(/<(?:path|circle|ellipse|rect|line|polygon)\b[^>]*>/g)) {
+    if (/stroke="(?!none")[^"]+"/.test(element[0])) assert.match(element[0], /stroke-width="1"/);
+  }
+  assert.match(thumb, /data-layer="family"/);
+  assert.match(thumb, /data-layer="suffix"/);
+});

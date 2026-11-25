@@ -1088,7 +1088,7 @@
       { bits, n } = layer('suffix:' + name + ':' + seed),
       { path, circle, line, rect, star, spiral } = tools(bits);
     bits.push(
-      `<g data-layer="suffix" data-trait="${esc(name)}" data-family="${esc(family.name)}" stroke-linecap="round" stroke-linejoin="round" opacity="0.78">`,
+      `<g data-layer="suffix" data-trait="${esc(name)}" data-family="${esc(family.name)}" stroke-linecap="round" stroke-linejoin="round" opacity="0.95">`,
     );
     const bubble = (x = 0, y = 0, r = 17) => {
       circle(x, y, r, 'none', 'currentColor', 1.5);
@@ -1438,8 +1438,43 @@
     }
     return instances;
   }
+  // Non-scaling strokes are measured in displayed CSS pixels, even through
+  // viewBox, body, mesh, and instance transforms. Apply to raw SVG primitives
+  // as well as helper-generated paths so no motif bypasses the floor.
+  function readableStrokes(svg, category, thumbnail = false) {
+    return svg.replace(
+      /<(path|circle|ellipse|rect|line|polyline|polygon)\b[^>]*\/?>/g,
+      (element) => {
+        const stroke = element.match(/\bstroke="([^"]+)"/);
+        if (!stroke || stroke[1] === 'none') return element;
+        const width = Number(element.match(/\bstroke-width="([^"]+)"/)?.[1] ?? 1);
+        const filled = /\bfill="(?!none")[^"]+"/.test(element);
+        if (thumbnail && !filled && width < 2) return '';
+        const weight = thumbnail
+          ? 1
+          : category === 'prefix'
+            ? 0.85
+            : category === 'suffix'
+              ? 1.5
+              : width >= 4
+                ? 2.5
+                : 2;
+        element = element.replace(/\s(?:stroke-width|vector-effect)="[^"]*"/g, '');
+        if (category === 'suffix')
+          element = element.replace(
+            /\bopacity="([\d.]+)"/g,
+            (_, opacity) => `opacity="${Math.max(0.85, Number(opacity))}"`,
+          );
+        return element.replace(
+          /\/?>$/,
+          (end) => ` stroke-width="${weight}" vector-effect="non-scaling-stroke"${end}`,
+        );
+      },
+    );
+  }
   // Recipe validation and final SVG composition.
-  function render(recipe, catalog) {
+  function render(recipe, catalog, options = {}) {
+    const thumbnail = options.thumbnail === true;
     const { prefix, family, suffix } = recipe,
       seed = String(recipe.seed);
     for (const k of ['prefix', 'family', 'suffix'])
@@ -1455,10 +1490,10 @@
         const scale =
           instance.scale * (['lattice', 'network'].includes(application.kind) ? 0.65 : 1);
         const transform = `translate(${fmt(instance.x)} ${fmt(instance.y)}) scale(${fmt(scale)}) translate(-400 -400)`;
-        return `<g data-instance="${index}" transform="${transform}">${application.svg}${suffixLayer(suffix, instanceSeed, palette, application, Number(fmt(scale)))}</g>`;
+        return `<g data-instance="${index}" transform="${transform}">${readableStrokes(application.svg, 'family', thumbnail)}${readableStrokes(suffixLayer(suffix, instanceSeed, palette, application, Number(fmt(scale))), 'suffix', thumbnail)}</g>`;
       })
       .join('');
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 800 800"><title>${esc(title)}</title><desc>Funfection Art Lab. Semantic recipe version 7. Seed: ${esc(seed)}. ${esc(traits.prefixes[prefix][3])}; ${esc(traits.families[family][4])}; ${esc(traits.suffixes[suffix][3])}.</desc><defs><clipPath id="art-crop"><path d="${cropPath(seed)}"/></clipPath></defs><g clip-path="url(#art-crop)"><rect width="800" height="800" fill="${bg}"/>${textureLayer(prefix, seed, palette)}${specimenArt}</g></svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 800 800"><title>${esc(title)}</title><desc>Funfection Art Lab. Semantic recipe version 7. Seed: ${esc(seed)}. ${esc(traits.prefixes[prefix][3])}; ${esc(traits.families[family][4])}; ${esc(traits.suffixes[suffix][3])}.</desc><defs><clipPath id="art-crop"><path d="${cropPath(seed)}"/></clipPath></defs><g clip-path="url(#art-crop)"><rect width="800" height="800" fill="${bg}"/>${thumbnail ? '' : readableStrokes(textureLayer(prefix, seed, palette), 'prefix')}${specimenArt}</g></svg>`;
   }
   root.FunfectionArt = {
     render,
@@ -1466,6 +1501,7 @@
     traits,
     familyApplication: familyLayer,
     jumbleGeometry,
+    readableStrokes,
     adornmentPlacements,
     instanceLayout,
     countScale,

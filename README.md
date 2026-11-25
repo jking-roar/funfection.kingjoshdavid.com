@@ -213,3 +213,16 @@ dimensions, aspect ratios, fill styles, and palette assignments vary the interna
 cluster independently of its outer family transform. Adornment landmarks are
 recorded on each generated piece's actual edge or vertex and inherit both its
 local transform and the family frame. Recipe links remain deterministic.
+
+### Displayed stroke floors
+
+SVG primitives use non-scaling strokes: family outlines are 2 CSS px (2.5 for
+heavy structural lines), suffix strokes are 1.5 px, and background texture uses
+0.85 px. These sizes survive the complete family/instance transform and responsive
+SVG viewBox scaling. Suffix group opacity is 0.95 and individual stroked adornments
+have at least 0.85 opacity. Filled-only decorations retain their intended shading.
+
+History requests a simplified render: omit prefix texture and fine unfilled
+lines below native width 2, then use 1 px strokes. The current artwork and exports
+keep full detail. Stroke rules are embedded in exported SVGs and therefore apply
+to PNG rasterization too; pixel weight follows the rasterization viewport.

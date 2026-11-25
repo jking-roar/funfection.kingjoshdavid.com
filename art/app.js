@@ -23,7 +23,7 @@ function showHistory() {
     button.setAttribute('aria-label', 'Restore ' + label);
     button.setAttribute('aria-pressed', String(JSON.stringify(specimen) === active));
     // Keep clip-path IDs unique across the current artwork and all thumbnails.
-    button.innerHTML = FunfectionArt.render(specimen, catalog).replaceAll(
+    button.innerHTML = FunfectionArt.render(specimen, catalog, { thumbnail: true }).replaceAll(
       'art-crop',
       'history-crop-' + specimens.indexOf(specimen),
     );
