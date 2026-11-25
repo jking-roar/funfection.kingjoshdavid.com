@@ -109,7 +109,7 @@ pointer capture, and visual layout still require a browser check.
 
 `/art/` makes deterministic abstract SVG artwork from the Funfection prefix, family, and suffix categories. Select any category, generate a random recipe or a new seed variation, copy a repeatable recipe URL, or export SVG / 1600 × 1600 PNG. Everything runs locally in the browser with no API keys or external dependencies.
 
-The catalog is a snapshot of the display names from `jking-roar/infection` at commit `6826faa230564528f8c2e7c20699c4f72b5aec88`, under `app/src/main/java/com/kingjoshdavid/funfection/model/viral/enums/{Prefix,Family,Suffix}.java`. Catalog snapshots preserve enum order; dropdowns display the names alphabetically. Prefix controls palette/texture; family controls topology, density, and geometry; suffix augments recorded family parts with local gesture details. These are new art interpretations, not visuals copied from the Android app. Recipe rendering now uses semantic version 5; see below.
+The catalog is a snapshot of the display names from `jking-roar/infection` at commit `6826faa230564528f8c2e7c20699c4f72b5aec88`, under `app/src/main/java/com/kingjoshdavid/funfection/model/viral/enums/{Prefix,Family,Suffix}.java`. Catalog snapshots preserve enum order; dropdowns display the names alphabetically. Prefix controls palette/texture; family controls topology, density, and geometry; suffix augments recorded family parts with local gesture details. These are new art interpretations, not visuals copied from the Android app. Recipe rendering now uses semantic version 6; see below.
 
 To update categories, update the three JSON snapshots and `art/catalog.js` together, preserving existing order. Keep private repository access out of the browser.
 
@@ -182,3 +182,25 @@ Background and palette colors preserve HSL saturation and lightness, so neutrals
 stay neutral and the palette keeps its relationships. Palette, body, attachment,
 and gesture random streams are independent. Reopening a recipe reproduces its
 colors and poses exactly. Version 5 intentionally updates existing recipe art.
+
+### Multiple plate instances (version 6)
+
+The seed chooses one to nine smaller family instances. Centers use best-of-six
+disk sampling to spread across the plate without forbidding body overlap.
+Each instance uses 60–99% of the fitted body's linear size; connected mesh/network
+structures receive additional fitting. Each body and its suffix details share
+one outer placement transform, so adornments remain attached. Instances are
+painted back-to-front as complete body/adornment groups, allowing natural overlap.
+Each gets its own deterministic geometry and attachment stream; the palette and
+prefix surface treatment remain shared across the plate. Layout is independent
+of category choices. Existing recipe URLs intentionally render the new layout.
+
+### Count-dependent size and adornment legibility
+
+Nominal plate multipliers for counts 1–9 are 0.95, 0.86, 0.80, 0.75, 0.71,
+0.68, 0.65, 0.62, and 0.60, with ±4% seeded instance variation clamped to a
+minimum final count multiplier of 0.60. Sparse plates
+use a smaller center-placement region to accommodate their larger bodies.
+Suffixes normalize by each gesture's native radius, and receive a minimum
+18-unit visible nominal radius after family and instance scaling (before explicit
+suffix overrides). This floor includes the minimum seeded detail size.

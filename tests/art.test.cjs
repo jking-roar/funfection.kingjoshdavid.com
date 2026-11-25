@@ -417,7 +417,9 @@ test('suffix details reuse recorded family frames for every family and suffix', 
     assert.ok(application.attachments.length > 0);
     for (const suffix of catalog.suffix) {
       const svg = render({ ...base, family, suffix }, catalog);
-      const details = svg.slice(svg.indexOf('<g data-layer="suffix"'));
+      const start = svg.indexOf('<g data-layer="suffix"');
+      const next = svg.indexOf('<g data-layer=', start + 1);
+      const details = svg.slice(start, next < 0 ? svg.length : next);
       const frames = [...details.matchAll(/data-family-part="(\d+)" transform="([^"]+)"/g)];
       assert.equal(
         frames.length,
@@ -465,9 +467,14 @@ test('reported examples have one centered body and sparse edge adornments', () =
     { prefix: 'Twinkly', family: 'Oracle', suffix: 'Puffin', seed: 'g0p801-1toycst' },
   ]) {
     const svg = render(recipe, catalog);
-    assert.equal((svg.match(/data-family-body=/g) || []).length, 1);
-    assert.ok([1, 2].includes((svg.match(/data-adornment-radius=/g) || []).length));
-    assert.match(svg, /Semantic recipe version 5/);
+    assert.equal(
+      (svg.match(/data-family-body=/g) || []).length,
+      globalThis.FunfectionArt.instanceLayout(recipe.seed).length,
+    );
+    const count = globalThis.FunfectionArt.instanceLayout(recipe.seed).length;
+    const details = (svg.match(/data-adornment-radius=/g) || []).length;
+    assert.ok(details >= count && details <= count * 2);
+    assert.match(svg, /Semantic recipe version 6/);
     assert.doesNotMatch(svg, /NaN|undefined|Infinity/);
   }
 });
@@ -531,5 +538,64 @@ test('palette hue varies slightly by seed and preserves color relationships', ()
       assert.equal(Math.min(...old), Math.min(...next));
       assert.equal(Math.max(...old), Math.max(...next));
     });
+  }
+});
+
+test('plate layouts span one to nine smaller, spread-out instances and permit overlap', () => {
+  const { instanceLayout } = globalThis.FunfectionArt;
+  const counts = new Set();
+  let overlaps = 0;
+  for (let i = 0; i < 200; i++) {
+    const seed = 'plate-' + i,
+      layout = instanceLayout(seed);
+    assert.deepEqual(layout, instanceLayout(seed));
+    counts.add(layout.length);
+    for (let j = 0; j < layout.length; j++) {
+      const p = layout[j];
+      assert.ok(p.scale >= 0.6 && p.scale <= 0.99);
+      assert.ok(Math.hypot(p.x - 400, p.y - 400) <= 220.01);
+      for (const q of layout.slice(0, j)) {
+        const distance = Math.hypot(p.x - q.x, p.y - q.y);
+        assert.ok(distance > 35, 'centers must not collapse into a pile');
+        if (distance < 170 * (p.scale + q.scale)) overlaps++;
+      }
+    }
+    const svg = render({ ...base, seed }, catalog);
+    assert.equal((svg.match(/data-instance=/g) || []).length, layout.length);
+    assert.equal((svg.match(/data-layer="family"/g) || []).length, layout.length);
+    assert.equal((svg.match(/data-layer="suffix"/g) || []).length, layout.length);
+  }
+  assert.deepEqual(
+    [...counts].sort((a, b) => a - b),
+    [1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.ok(overlaps > 0);
+});
+
+test('count scaling strictly decreases and sparse plates have larger bodies', () => {
+  const { countScale } = globalThis.FunfectionArt;
+  assert.equal(countScale(1), 0.95);
+  assert.equal(countScale(2), 0.86);
+  for (let count = 2; count <= 9; count++) assert.ok(countScale(count) < countScale(count - 1));
+});
+test('every suffix has a finite native glyph radius', () => {
+  for (const name of catalog.suffix)
+    assert.ok(globalThis.FunfectionArt.suffixGlyphRadius(name) > 0);
+});
+test('adornment sizing compensates for complete instance scaling', () => {
+  for (const family of catalog.family) {
+    const svg = render({ ...base, family, seed: 'nine-small' }, catalog);
+    const instances = svg.split(/<g data-instance="\d+" transform="/).slice(1);
+    for (const instance of instances) {
+      const sceneScale = Number(instance.match(/scale\(([\d.]+)\)/)[1]);
+      const re = /data-family-part="\d+" transform="([^"]+)"><g data-adornment-radius="([^"]+)"/g;
+      for (const [, transform, radius] of instance.matchAll(re)) {
+        const frameScale = [...transform.matchAll(/scale\(([^)]+)\)/g)].reduce(
+          (p, m) => p * Math.abs(Number(m[1].split(' ')[0])),
+          1,
+        );
+        assert.ok(sceneScale * frameScale * Number(radius) * 0.92 >= 17.99, family);
+      }
+    }
   }
 });

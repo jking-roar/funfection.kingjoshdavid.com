@@ -1,4 +1,4 @@
-/* Semantic renderer v5. Family geometry drives suffix attachment; enum order has no visual meaning. */
+/* Semantic renderer v6. Family geometry drives suffix attachment; enum order has no visual meaning. */
 (function (root) {
   'use strict';
   const traits =
@@ -178,6 +178,10 @@
         transform,
         color,
         extent,
+        frameScale: [...bodyTransform.matchAll(/scale\(([^)]+)\)/g)].reduce(
+          (product, match) => product * Math.abs(Number(match[1].split(' ')[0])),
+          1,
+        ),
         point: [...point],
         rotationRange:
           profile.rotationRange ?? (Math.abs(Math.sin((angle * Math.PI) / 180)) > 0.7 ? 22 : 35),
@@ -968,8 +972,67 @@
     bits.push('</g>');
     return bits.join('');
   }
+  // Approximate native gesture radii; small glyphs need a larger multiplier
+  // than sprawling bursts to achieve the same visible adornment size.
+  function suffixGlyphRadius(name) {
+    return {
+      Sneezle: 53,
+      Wiggle: 52,
+      Giggle: 30,
+      Whisper: 46,
+      Bouncer: 48,
+      Fizzle: 39,
+      Bumble: 47,
+      Crackle: 49,
+      Doodle: 50,
+      Flitter: 34,
+      Glimpse: 30,
+      Hiccup: 47,
+      Jingle: 39,
+      Kabloo: 62,
+      Lobber: 57,
+      Mizzle: 25,
+      Nuzzle: 37,
+      Puffin: 38,
+      Quibble: 40,
+      Razzle: 50,
+      Snicker: 30,
+      Tizzy: 62,
+      Uproar: 64,
+      Vizzle: 56,
+      Wobble: 53,
+      Xizzle: 37,
+      Yapper: 43,
+      Zinger: 51,
+      Babble: 41,
+      Chirp: 27,
+      Doink: 46,
+      Flump: 49,
+      Grizzle: 47,
+      Honk: 70,
+      Jounce: 48,
+      Klaxon: 55,
+      Lurk: 44,
+      Mump: 41,
+      Nerp: 35,
+      Plonk: 46,
+      Quonk: 46,
+      Rumpus: 62,
+      Skitter: 41,
+      Thunk: 50,
+      Unzip: 52,
+      Vroom: 54,
+      Whomp: 75,
+      Xyzzle: 40,
+      Yowl: 64,
+      Zonk: 47,
+    }[name];
+  }
+  function countScale(count) {
+    return [0.95, 0.86, 0.8, 0.75, 0.71, 0.68, 0.65, 0.62, 0.6][count - 1];
+  }
   // Suffix details use the recorded family coordinate frames, never canvas positions.
-  function suffixLayer(name, seed, palette, family) {
+  function suffixLayer(name, seed, palette, family, sceneScale = 1) {
     const [kind] = traits.suffixes[name],
       iconSize = iconScale('suffix', name),
       { bits, n } = layer('suffix:' + name + ':' + seed),
@@ -985,10 +1048,22 @@
       for (let k = 0; k < 3; k++)
         path(`M${k * 9} -${r + k * 5}Q${r + k * 18} 0 ${k * 9} ${r + k * 5}`);
     };
-    const placements = adornmentPlacements(family, name, seed);
+    const placements = adornmentPlacements(
+      {
+        ...family,
+        attachments: family.attachments.map((attachment) => ({
+          ...attachment,
+          // Keep details legible after both family and plate scaling, including
+          // the smallest seeded size variation. Explicit suffix overrides apply after this.
+          extent: Math.max(attachment.extent, 18 / (sceneScale * attachment.frameScale * 0.92)),
+        })),
+      },
+      name,
+      seed,
+    );
     for (let i = 0; i < placements.length; i++) {
       const { attachment, rotation, outward, tangent, scale: variation } = placements[i];
-      const size = (attachment.extent / 55) * (iconSize / 2) * variation;
+      const size = (attachment.extent / suffixGlyphRadius(name)) * (iconSize / 2) * variation;
       bits.push(
         `<g data-family-part="${attachment.id}" transform="${attachment.transform}"><g data-adornment-radius="${attachment.extent}" data-rotation="${fmt(rotation)}" transform="translate(${fmt(outward)} ${fmt(tangent)}) rotate(${fmt(rotation)}) scale(${fmt(size)}) ${mirrorTransform(seed, 'suffix', name, i)}" color="${attachment.color}">`,
       );
@@ -1286,6 +1361,33 @@
     }
     return d + 'Z';
   }
+  // Best-of-several sampling spreads centers without forbidding silhouette overlap.
+  // Layout depends only on the seed, so changing a category cannot reshuffle it.
+  function instanceLayout(seed) {
+    const rng = random('plate-instances:v1:' + seed);
+    const count = 1 + Math.floor(rng() * 9);
+    const instances = [];
+    for (let i = 0; i < count; i++) {
+      let best,
+        bestDistance = -1;
+      for (let candidate = 0; candidate < 6; candidate++) {
+        const angle = rng() * Math.PI * 2;
+        const radius =
+          Math.sqrt(rng()) * (count === 1 ? 35 : count === 2 ? 145 : count === 3 ? 180 : 220);
+        const x = 400 + Math.cos(angle) * radius,
+          y = 400 + Math.sin(angle) * radius;
+        const distance = instances.length
+          ? Math.min(...instances.map((p) => Math.hypot(p.x - x, p.y - y)))
+          : 1;
+        if (distance > bestDistance) {
+          best = { x, y };
+          bestDistance = distance;
+        }
+      }
+      instances.push({ ...best, scale: Math.max(0.6, countScale(count) * (0.96 + rng() * 0.08)) });
+    }
+    return instances;
+  }
   // Recipe validation and final SVG composition.
   function render(recipe, catalog) {
     const { prefix, family, suffix } = recipe,
@@ -1294,8 +1396,19 @@
       if (!catalog[k].includes(recipe[k])) throw Error('Unknown ' + k);
     const { background: bg, colors: palette } = paletteFor(prefix, seed);
     const title = [prefix, family, suffix].join(' ');
-    const application = familyLayer(family, seed, palette);
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 800 800"><title>${esc(title)}</title><desc>Funfection Art Lab. Semantic recipe version 5. Seed: ${esc(seed)}. ${esc(traits.prefixes[prefix][3])}; ${esc(traits.families[family][4])}; ${esc(traits.suffixes[suffix][3])}.</desc><defs><clipPath id="art-crop"><path d="${cropPath(seed)}"/></clipPath></defs><g clip-path="url(#art-crop)"><rect width="800" height="800" fill="${bg}"/>${textureLayer(prefix, seed, palette)}${application.svg}${suffixLayer(suffix, seed, palette, application)}</g></svg>`;
+    const instances = instanceLayout(seed);
+    const specimenArt = instances
+      .map((instance, index) => {
+        const instanceSeed = index === 0 ? seed : seed + ':instance:' + index;
+        const application = familyLayer(family, instanceSeed, palette);
+        // Meshes fill a wider native frame than an individual silhouette.
+        const scale =
+          instance.scale * (['lattice', 'network'].includes(application.kind) ? 0.65 : 1);
+        const transform = `translate(${fmt(instance.x)} ${fmt(instance.y)}) scale(${fmt(scale)}) translate(-400 -400)`;
+        return `<g data-instance="${index}" transform="${transform}">${application.svg}${suffixLayer(suffix, instanceSeed, palette, application, Number(fmt(scale)))}</g>`;
+      })
+      .join('');
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 800 800"><title>${esc(title)}</title><desc>Funfection Art Lab. Semantic recipe version 6. Seed: ${esc(seed)}. ${esc(traits.prefixes[prefix][3])}; ${esc(traits.families[family][4])}; ${esc(traits.suffixes[suffix][3])}.</desc><defs><clipPath id="art-crop"><path d="${cropPath(seed)}"/></clipPath></defs><g clip-path="url(#art-crop)"><rect width="800" height="800" fill="${bg}"/>${textureLayer(prefix, seed, palette)}${specimenArt}</g></svg>`;
   }
   root.FunfectionArt = {
     render,
@@ -1303,6 +1416,9 @@
     traits,
     familyApplication: familyLayer,
     adornmentPlacements,
+    instanceLayout,
+    countScale,
+    suffixGlyphRadius,
     paletteFor,
     rotateHue,
     cropPath,
