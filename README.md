@@ -226,3 +226,12 @@ History requests a simplified render: omit prefix texture and fine unfilled
 lines below native width 2, then use 1 px strokes. The current artwork and exports
 keep full detail. Stroke rules are embedded in exported SVGs and therefore apply
 to PNG rasterization too; pixel weight follows the rasterization viewport.
+
+### Size-aware instance separation
+
+Instance placement uses a seeded ring for counts 2–6 and a center plus outer
+ring for counts 7–9. Radius is based on fitted body size, with small angular and
+radial jitter. Adjacent centers stay at least 80% of the sum of nominal body radii
+apart, allowing occasional edge overlap without stacking bodies across their
+centers. The 0.60 count-scale floor and count distribution are unchanged.
+Adornments can still cross neighbors because their extent varies by family/suffix.

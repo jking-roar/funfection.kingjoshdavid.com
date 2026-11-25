@@ -1411,30 +1411,40 @@
     }
     return d + 'Z';
   }
-  // Best-of-several sampling spreads centers without forbidding silhouette overlap.
-  // Layout depends only on the seed, so changing a category cannot reshuffle it.
+  // Size-aware ring packing keeps bodies apart, with a little edge overlap.
+  // Dense plates use one central body and an outer ring instead of a random pile.
   function instanceLayout(seed) {
     const rng = random('plate-instances:v1:' + seed);
     const count = 1 + Math.floor(rng() * 9);
+    const scales = Array.from({ length: count }, () =>
+      Math.max(0.6, countScale(count) * (0.96 + rng() * 0.08)),
+    );
+    if (count === 1)
+      return [{ x: 400 + (rng() - 0.5) * 30, y: 400 + (rng() - 0.5) * 30, scale: scales[0] }];
+    const hasCenter = count >= 7;
+    const ringCount = count - (hasCenter ? 1 : 0);
+    const phase = rng() * Math.PI * 2;
+    // Nominal fitted body radius is 170 units. Allow about 10% edge
+    // intrusion for sparse plates; dense plates use the available perimeter.
+    const maxScale = Math.max(...scales);
+    const ringRadius = hasCenter
+      ? 230
+      : Math.min(230, (170 * maxScale * 0.92) / Math.sin(Math.PI / ringCount));
     const instances = [];
-    for (let i = 0; i < count; i++) {
-      let best,
-        bestDistance = -1;
-      for (let candidate = 0; candidate < 6; candidate++) {
-        const angle = rng() * Math.PI * 2;
-        const radius =
-          Math.sqrt(rng()) * (count === 1 ? 35 : count === 2 ? 145 : count === 3 ? 180 : 220);
-        const x = 400 + Math.cos(angle) * radius,
-          y = 400 + Math.sin(angle) * radius;
-        const distance = instances.length
-          ? Math.min(...instances.map((p) => Math.hypot(p.x - x, p.y - y)))
-          : 1;
-        if (distance > bestDistance) {
-          best = { x, y };
-          bestDistance = distance;
-        }
-      }
-      instances.push({ ...best, scale: Math.max(0.6, countScale(count) * (0.96 + rng() * 0.08)) });
+    if (hasCenter)
+      instances.push({
+        x: 400 + (rng() - 0.5) * 10,
+        y: 400 + (rng() - 0.5) * 10,
+        scale: scales[0],
+      });
+    for (let i = 0; i < ringCount; i++) {
+      const angle = phase + (i * Math.PI * 2) / ringCount + (rng() - 0.5) * 0.025;
+      const radius = ringRadius + (rng() - 0.5) * 4;
+      instances.push({
+        x: 400 + Math.cos(angle) * radius,
+        y: 400 + Math.sin(angle) * radius,
+        scale: scales[instances.length],
+      });
     }
     return instances;
   }
