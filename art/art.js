@@ -1,4 +1,4 @@
-/* Semantic renderer v6. Family geometry drives suffix attachment; enum order has no visual meaning. */
+/* Semantic renderer v7. Family geometry drives suffix attachment; enum order has no visual meaning. */
 (function (root) {
   'use strict';
   const traits =
@@ -165,6 +165,26 @@
       );
     return { path, circle, line, rect, star, spiral, leaf };
   }
+  // A compact, overlapping cluster whose pieces and arrangement are seed-driven.
+  function jumbleGeometry(seed) {
+    const rng = random('jumble-geometry:v1:' + seed);
+    const kinds = ['circle', 'rectangle', 'triangle', 'diamond', 'pentagon', 'hexagon'];
+    const count = 3 + Math.floor(rng() * 3),
+      phase = rng() * Math.PI * 2;
+    return Array.from({ length: count }, (_, index) => {
+      const angle = phase + (index * Math.PI * 2) / count + (rng() - 0.5) * 0.45;
+      const distance = 14 + rng() * 12;
+      return {
+        kind: kinds[Math.floor(rng() * kinds.length)],
+        x: fmt(Math.cos(angle) * distance),
+        y: fmt(Math.sin(angle) * distance),
+        radius: fmt(15 + rng() * 8),
+        aspect: fmt(0.65 + rng() * 0.55),
+        rotation: fmt(rng() * 360),
+        filled: rng() < 0.45,
+      };
+    });
+  }
   // Family geometry: whole compositions and repeated silhouettes.
   function familyLayer(name, seed, palette) {
     const attachments = [];
@@ -284,7 +304,7 @@
           ? n(-12, 12)
           : n(-180, 180);
         const transform = `translate(${fmt(x)} ${fmt(y)}) rotate(${fmt(rotation)}) scale(${fmt(((s / 50) * iconSize) / 2)}) ${mirrorTransform(seed, 'family', name, i)}`;
-        profile.points.forEach((point) => record(transform, color, point));
+        if (kind !== 'jumble') profile.points.forEach((point) => record(transform, color, point));
         bits.push(`<g data-family-body="0" transform="${transform}" color="${color}">`);
         switch (kind) {
           case 'spark':
@@ -379,11 +399,41 @@
             path('M-24 -45L-13 20 0 65 12 5 22 -45Z', 'currentColor', 'currentColor', 2, 0.25);
             path('M0 -42V62M-20 -35L0 5 17 -28');
             break;
-          case 'jumble':
-            rect(-35, -25, 38, 40, 'currentColor', 0.6);
-            circle(14, 11, 26, 'none', 'currentColor', 3);
-            path('M-10 39L35 -27 48 36Z', 'none', 'currentColor', 3);
+          case 'jumble': {
+            const shapes = jumbleGeometry(seed);
+            shapes.forEach((shape, index) => {
+              const { kind: shapeKind, x, y, radius: r, aspect, rotation: turn, filled } = shape;
+              const shapeTransform = `translate(${x} ${y}) rotate(${turn})`;
+              bits.push(
+                `<g data-jumble-shape="${shapeKind}" transform="${shapeTransform}" color="${palette[index % palette.length]}">`,
+              );
+              const fill = filled ? 'currentColor' : 'none';
+              if (shapeKind === 'circle')
+                circle(0, 0, r, fill, 'currentColor', 2, filled ? 0.55 : 1);
+              else if (shapeKind === 'rectangle') {
+                bits.push(
+                  `<rect x="${-r}" y="${fmt(-r * aspect)}" width="${2 * r}" height="${fmt(2 * r * aspect)}" fill="${fill}" stroke="currentColor" stroke-width="2" opacity="${filled ? 0.55 : 1}"/>`,
+                );
+              } else {
+                const sides = { triangle: 3, diamond: 4, pentagon: 5, hexagon: 6 }[shapeKind];
+                let d = '';
+                for (let vertex = 0; vertex < sides; vertex++) {
+                  const a = (vertex * Math.PI * 2) / sides;
+                  d +=
+                    (vertex ? 'L' : 'M') +
+                    fmt(Math.cos(a) * r) +
+                    ' ' +
+                    fmt(Math.sin(a) * r * aspect);
+                }
+                path(d + 'Z', fill, 'currentColor', 2, filled ? 0.55 : 1);
+              }
+              bits.push('</g>');
+              // The +x edge/vertex lies on every generated shape. Rotate it
+              // with that shape before applying the family's own frame.
+              record(`${transform} ${shapeTransform}`, palette[index % palette.length], [r, 0, 0]);
+            });
             break;
+          }
           case 'flame':
             path(
               'M0 50C-62 17 -26 -12 -10 -21C-4 -3 4 -20 1 -57C64 -8 49 27 0 50Z',
@@ -1408,13 +1458,14 @@
         return `<g data-instance="${index}" transform="${transform}">${application.svg}${suffixLayer(suffix, instanceSeed, palette, application, Number(fmt(scale)))}</g>`;
       })
       .join('');
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 800 800"><title>${esc(title)}</title><desc>Funfection Art Lab. Semantic recipe version 6. Seed: ${esc(seed)}. ${esc(traits.prefixes[prefix][3])}; ${esc(traits.families[family][4])}; ${esc(traits.suffixes[suffix][3])}.</desc><defs><clipPath id="art-crop"><path d="${cropPath(seed)}"/></clipPath></defs><g clip-path="url(#art-crop)"><rect width="800" height="800" fill="${bg}"/>${textureLayer(prefix, seed, palette)}${specimenArt}</g></svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 800 800"><title>${esc(title)}</title><desc>Funfection Art Lab. Semantic recipe version 7. Seed: ${esc(seed)}. ${esc(traits.prefixes[prefix][3])}; ${esc(traits.families[family][4])}; ${esc(traits.suffixes[suffix][3])}.</desc><defs><clipPath id="art-crop"><path d="${cropPath(seed)}"/></clipPath></defs><g clip-path="url(#art-crop)"><rect width="800" height="800" fill="${bg}"/>${textureLayer(prefix, seed, palette)}${specimenArt}</g></svg>`;
   }
   root.FunfectionArt = {
     render,
     hash,
     traits,
     familyApplication: familyLayer,
+    jumbleGeometry,
     adornmentPlacements,
     instanceLayout,
     countScale,

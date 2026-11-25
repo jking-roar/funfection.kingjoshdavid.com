@@ -204,3 +204,12 @@ use a smaller center-placement region to accommodate their larger bodies.
 Suffixes normalize by each gesture's native radius, and receive a minimum
 18-unit visible nominal radius after family and instance scaling (before explicit
 suffix overrides). This floor includes the minimum seeded detail size.
+
+### Seeded Jumble geometry (version 7)
+
+Jumble creates three to five overlapping pieces selected from circles, rectangles,
+triangles, diamonds, pentagons, and hexagons. Seeded positions, rotations,
+dimensions, aspect ratios, fill styles, and palette assignments vary the internal
+cluster independently of its outer family transform. Adornment landmarks are
+recorded on each generated piece's actual edge or vertex and inherit both its
+local transform and the family frame. Recipe links remain deterministic.
