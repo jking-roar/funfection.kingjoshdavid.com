@@ -553,7 +553,7 @@ test('plate layouts span one to nine smaller, spread-out instances and permit ov
     for (let j = 0; j < layout.length; j++) {
       const p = layout[j];
       assert.ok(p.scale >= 0.6 && p.scale <= 0.99);
-      assert.ok(Math.hypot(p.x - 400, p.y - 400) <= 220.01);
+      assert.ok(Math.hypot(p.x - 400, p.y - 400) <= 232.01);
       for (const q of layout.slice(0, j)) {
         const distance = Math.hypot(p.x - q.x, p.y - q.y);
         assert.ok(distance > 35, 'centers must not collapse into a pile');
@@ -657,4 +657,21 @@ test('history simplifies fine detail and keeps one-pixel non-scaling strokes', (
   }
   assert.match(thumb, /data-layer="family"/);
   assert.match(thumb, /data-layer="suffix"/);
+});
+
+test('size-aware packing limits body intrusion, including the reported Fable plate', () => {
+  const { instanceLayout } = globalThis.FunfectionArt;
+  for (const seed of [
+    'yt6xf2-bspqu4',
+    ...Array.from({ length: 300 }, (_, i) => 'separation-' + i),
+  ]) {
+    const layout = instanceLayout(seed);
+    for (let i = 0; i < layout.length; i++) {
+      for (const other of layout.slice(0, i)) {
+        const distance = Math.hypot(layout[i].x - other.x, layout[i].y - other.y);
+        const summedRadii = 170 * (layout[i].scale + other.scale);
+        assert.ok(distance >= summedRadii * 0.8, seed + ': body overlap exceeds allowance');
+      }
+    }
+  }
 });
