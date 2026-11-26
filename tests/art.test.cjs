@@ -115,7 +115,12 @@ test('page restores recipe, edits, randomizes, shares, and exports', async () =>
       }
     },
     Math,
-    setTimeout() {},
+    setTimeout(fn, delay) {
+      if (delay !== 2000) return;
+      context.pendingTimer = fn;
+      return 1;
+    },
+    clearTimeout() { context.pendingTimer = null; },
     location: { search: current.search, href: current.href },
     history: {
       replaceState(a, b, url) {
@@ -165,7 +170,7 @@ test('page restores recipe, edits, randomizes, shares, and exports', async () =>
       },
     },
   };
-  vm.runInNewContext(fs.readFileSync(require.resolve('../art/app.js'), 'utf8'), context);
+  await vm.runInNewContext(fs.readFileSync(require.resolve('../art/app.js'), 'utf8'), context);
   assert.equal(nodes.name.textContent, 'Neon Bloom Wiggle');
   assert.equal(nodes.seed.value, 'example');
   assert.match(nodes.art.innerHTML, /<svg/);
@@ -173,13 +178,24 @@ test('page restores recipe, edits, randomizes, shares, and exports', async () =>
   assert.equal(nodes.history.children.length, 1);
   nodes.seed.value = 'typed seed';
   nodes.seed.input();
+  assert.equal(nodes.art.innerHTML, first);
+  assert.equal(nodes.history.children.length, 1);
+  nodes.seed.value = 'typed seed final';
+  nodes.seed.input();
+  assert.equal(nodes.art.innerHTML, first);
+  context.pendingTimer();
   assert.notEqual(nodes.art.innerHTML, first);
-  assert.equal(current.searchParams.get('seed'), 'typed seed');
+  assert.equal(current.searchParams.get('seed'), 'typed seed final');
   assert.equal(nodes.history.children.length, 2);
   nodes.history.children[1].onclick();
   assert.equal(nodes.art.innerHTML, first);
   assert.equal(nodes.seed.value, 'example');
   assert.equal(nodes.history.children.length, 2);
+  nodes.seed.value = 'blurred seed';
+  nodes.seed.input();
+  nodes.seed.blur();
+  assert.equal(current.searchParams.get('seed'), 'blurred seed');
+  assert.equal(context.pendingTimer, null);
   nodes.variation.onclick();
   assert.notEqual(nodes.seed.value, 'example');
   assert.notEqual(nodes.art.innerHTML, first);
@@ -674,4 +690,63 @@ test('size-aware packing limits body intrusion, including the reported Fable pla
       }
     }
   }
+});
+
+test('async history persists recipes, validates restored data, and tolerates storage failures', async () => {
+  const vm = require('node:vm');
+  const source = fs.readFileSync(require.resolve('../art/app.js'), 'utf8').split('const historyPanel')[0];
+  let stored;
+  let writes = 0;
+  const database = {
+    transaction(store, mode) {
+      const transaction = {
+        objectStore() {
+          return {
+            get() {
+              const request = {};
+              queueMicrotask(() => { request.result = stored; request.onsuccess(); });
+              return request;
+            },
+            put(value) {
+              writes++;
+              stored = structuredClone(value);
+              queueMicrotask(() => transaction.oncomplete());
+            },
+          };
+        },
+      };
+      return transaction;
+    },
+  };
+  const indexedDB = {
+    open() {
+      const request = {};
+      queueMicrotask(() => { request.result = database; request.onsuccess(); });
+      return request;
+    },
+  };
+  async function load(storage = indexedDB) {
+    const context = vm.createContext({ FunfectionCatalog: catalog, document: { getElementById() {} }, indexedDB: storage });
+    vm.runInContext(source, context);
+    await vm.runInContext('loadHistory()', context);
+    return { context, recipes: () => JSON.parse(vm.runInContext('JSON.stringify(specimens)', context)) };
+  }
+  const first = await load();
+  await vm.runInContext('specimens.push(' + JSON.stringify(base) + '); saveHistory()', first.context);
+  assert.equal(writes, 1);
+  assert.deepEqual((await load()).recipes(), [base]);
+  stored = [null, { ...base, family: 'unknown' }, { ...base, seed: 42 },
+    { ...base, seed: 'x'.repeat(81) }, base, base,
+    ...Array.from({ length: 70 }, (_, i) => ({ ...base, seed: String(i) }))];
+  const restored = (await load()).recipes();
+  assert.equal(restored.length, 60);
+  assert.deepEqual(restored[0], base);
+  assert.equal(restored[59].seed, '58');
+  stored = {};
+  assert.deepEqual((await load()).recipes(), []);
+  const unavailable = await load({ open() { throw Error(); } });
+  assert.deepEqual(unavailable.recipes(), []);
+  await assert.doesNotReject(() => vm.runInContext('saveHistory()', unavailable.context));
+  database.transaction = () => { throw Error('quota'); };
+  await assert.doesNotReject(() => vm.runInContext('saveHistory()', first.context));
 });

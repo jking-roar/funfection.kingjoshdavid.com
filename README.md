@@ -10,7 +10,7 @@ No build step or framework is required; serve this directory as a static site.
 
 | Directory | Purpose | Where to start |
 | --- | --- | --- |
-| `art/` | Deterministic artwork, recipes, exports, and session history | `app.js` for UI; see the renderer map below |
+| `art/` | Deterministic artwork, recipes, exports, and saved history | `app.js` for UI; see the renderer map below |
 | `tiles/` | Pixel tile editor, mirroring, and repeat previews | `app.js` |
 | `svg/editor/` | SVG markup editor and live preview | `app.js` |
 | `canarysplode/` | Interactive canary experiment | `app.js` |
@@ -115,7 +115,7 @@ To update categories, update the three JSON snapshots and `art/catalog.js` toget
 
 Run art checks with `node --test tests/art.test.cjs`.
 
-Art Lab displays circular specimens at half the original width and height (one quarter of the area). SVG clipping is embedded in the artwork so both SVG and PNG downloads have transparent pixels outside the circle; the background inside the circle remains part of the recipe. Export resolutions remain 1200 × 1200 SVG / 1600 × 1600 PNG. Session history beside the current specimen keeps the latest 60 distinct recipes, including live seed edits, and clicking a thumbnail restores its controls and download content. Seed changes apply on every input event, not blur. History resets on page reload; copied recipe links remain repeatable.
+Art Lab displays circular specimens at half the original width and height (one quarter of the area). SVG clipping is embedded in the artwork so both SVG and PNG downloads have transparent pixels outside the circle; the background inside the circle remains part of the recipe. Export resolutions remain 1200 × 1200 SVG / 1600 × 1600 PNG. History beside the current specimen keeps the latest 60 distinct recipes, including completed seed edits, and clicking a thumbnail restores its controls and download content. Seed changes apply after a two-second typing pause or immediately when the seed field loses focus. History is saved asynchronously in IndexedDB and survives reloads and browser restarts on the same browser and device. Storage uses asynchronous database transactions without JSON serialization on each edit. Only recipes are stored; thumbnails are regenerated. Clearing site data removes it. If browser storage is unavailable, history remains available for the current session. Copied recipe links remain repeatable.
 
 ### Semantic art recipes (version 4)
 
@@ -123,7 +123,7 @@ Art Lab displays circular specimens at half the original width and height (one q
 
 Examples: Frosty adds blue frost crystals; Amber adds amber resin inclusions; Bramble draws thorny branches; Gyoza draws pleated dumplings; Xebec draws three-masted ships; Crackle adds fractures; Unzip adds zipper teeth. The mappings are artistic interpretations, including coined names whose meanings are open-ended.
 
-Each category has a random stream derived from its own name and the seed. The family application records attachment IDs, exact transforms (including scale and mirroring), color, and local detail extent. Suffixes use those coordinate frames to decorate family parts rather than scattering independent symbols; Lattice uses visible mesh nodes and Nexus uses network nodes. Changing family also changes suffix placement. The suffix scale override controls local detail size relative to its family part. These records are regenerated deterministically, so recipe URLs and exports require no extra stored state. Changing a suffix preserves family geometry and prefix texture. Changing a prefix recolors the family and suffix while preserving their geometry. Editing the seed varies all three layers. Version 4 replaces independent suffix placement and overlapping body clusters: existing URLs retain their selections but render the new semantic artwork. Circular clipping, transparent exports, and session history remain in place.
+Each category has a random stream derived from its own name and the seed. The family application records attachment IDs, exact transforms (including scale and mirroring), color, and local detail extent. Suffixes use those coordinate frames to decorate family parts rather than scattering independent symbols; Lattice uses visible mesh nodes and Nexus uses network nodes. Changing family also changes suffix placement. The suffix scale override controls local detail size relative to its family part. These records are regenerated deterministically, so recipe URLs and exports require no extra stored state. Changing a suffix preserves family geometry and prefix texture. Changing a prefix recolors the family and suffix while preserving their geometry. Editing the seed varies all three layers. Version 4 replaces independent suffix placement and overlapping body clusters: existing URLs retain their selections but render the new semantic artwork. Circular clipping, transparent exports, and saved history remain in place.
 
 ### Icon scale configuration
 
