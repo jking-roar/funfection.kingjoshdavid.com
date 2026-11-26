@@ -20,8 +20,7 @@
     const n = (a, b) => +(a + random() * (b - a)).toFixed(2);
     const tilt = n(-7, 7),
       hue = n(193, 218),
-      side = random() > 0.5,
-      serial = (state >>> 0).toString(16).slice(-6).toUpperCase();
+      side = random() > 0.5;
     const bits = [
       `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 950" preserveAspectRatio="none"><defs><linearGradient id="plate-glass" x2="${n(0.2, 1)}" y2="${n(0.2, 1)}"><stop stop-color="#ffffff" stop-opacity=".88"/><stop offset="${n(0.3, 0.7)}" stop-color="hsl(${hue} 25% 86%)" stop-opacity=".42"/><stop offset="1" stop-color="#ffffff" stop-opacity=".8"/></linearGradient></defs><rect x="5" y="5" width="790" height="940" rx="${n(5, 20)}" fill="url(#plate-glass)" stroke="#b8c9d3" stroke-width="2"/>`,
     ];
@@ -55,8 +54,13 @@
     }
     const labelX = side ? 38 : 470,
       labelY = n(30, 53);
+    const label = 'SEED ' + String(recipe.seed);
+    const escapedLabel = label.replace(/[&<>"']/g, (ch) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch],
+    );
+    const fitLabel = label.length > 29 ? ' textLength="265" lengthAdjust="spacingAndGlyphs"' : '';
     bits.push(
-      `<g transform="translate(${labelX} ${labelY}) rotate(${n(-3, 3)})"><rect width="285" height="39" rx="2" fill="#ffffff" opacity=".65"/><text x="10" y="25" font-family="monospace" font-size="15" fill="#607b8a">FUNFECTION · ${serial}</text></g>`,
+      `<g transform="translate(${labelX} ${labelY}) rotate(${n(-3, 3)})"><rect width="285" height="39" rx="2" fill="#ffffff" opacity=".65"/><text x="10" y="25" font-family="monospace" font-size="15" fill="#607b8a"${fitLabel}>${escapedLabel}</text></g>`,
     );
     const sx = side ? 575 : 45,
       sy = n(895, 917),
