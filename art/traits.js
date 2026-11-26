@@ -42,7 +42,7 @@
     Ebon: ['#060a12', '#6284ac #8a9db5 #c2d1e5', 'grain', 'Black polished grain'],
     Fuzzy: ['#fcfbff', '#a97bc1 #70a9c1 #d58baf', 'fur', 'Soft short fuzzy fibers'],
     Gawky: ['#ffffff', '#70a748 #b56094 #d39635', 'stilts', 'Long ungainly angular limbs'],
-    Hushed: ['#fbfcff', '#96a4bc #bab1ce #9ebbb5', 'quiet', 'Sparse faint specks'],
+    Hushed: ['#fbfcff', '#96a4bc #bab1ce #9ebbb5', 'quiet', 'Sparse soft dots and gently fading dashes'],
     Inky: ['#ffffff', '#10263f #253f62 #4d6389', 'ink', 'Dark ink pools and droplets'],
     Jaunty: ['#ffffff', '#e54575 #257bab #e4b22c', 'ticks', 'Upbeat tilted strokes'],
     Knobby: ['#fbfcff', '#547f9e #9c75a6 #79a787', 'knots', 'Rounded clustered knobs'],

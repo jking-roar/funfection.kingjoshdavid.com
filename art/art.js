@@ -789,7 +789,7 @@
     const soft = ['nap', 'haze', 'mist', 'murk', 'quiet'].includes(kind);
     const count = kind === 'quiet' ? 8 : kind === 'noise' ? 80 : soft ? 12 : 24;
     bits.push(
-      `<g data-layer="prefix" data-trait="${esc(name)}" stroke-linecap="round" stroke-linejoin="round" opacity="${soft ? 0.07 : 0.12}">`,
+      `<g data-layer="prefix" data-trait="${esc(name)}" stroke-linecap="round" stroke-linejoin="round" opacity="${kind === 'quiet' ? 0.6 : soft ? 0.07 : 0.12}">`,
     );
     for (let i = 0; i < count; i++) {
       const x = n(30, 770),
@@ -980,7 +980,14 @@
           path('M-15 25L-5 -20 5 -8 15 27');
           break;
         case 'quiet':
-          circle(0, 0, 1.5, 'currentColor', 'none');
+          // Keep the texture sparse, with marks large enough to read on mobile.
+          // Successive dash segments fade without requiring per-mark SVG filters.
+          if (i % 2 === 0) circle(0, 0, 3, 'currentColor', 'none');
+          else {
+            path('M-9 0h6', 'none', 'currentColor', 2, 0.9);
+            path('M-3 0h6', 'none', 'currentColor', 2, 0.55);
+            path('M3 0h6', 'none', 'currentColor', 2, 0.25);
+          }
           break;
         case 'ink':
           circle(0, 0, r, 'currentColor', 'none', 1, 0.75);
