@@ -57,16 +57,6 @@
     bits.push(
       `<g transform="translate(${labelX} ${labelY}) rotate(${n(-3, 3)})"><rect width="285" height="39" rx="2" fill="#ffffff" opacity=".65"/><text x="10" y="25" font-family="monospace" font-size="15" fill="#607b8a">FUNFECTION</text></g>`,
     );
-    const sx = side ? 575 : 45,
-      sy = n(895, 917),
-      length = n(90, 150);
-    bits.push(
-      `<path d="M${sx} ${sy - 10}v10h${length}v-10" fill="none" stroke="#607b8a" stroke-width="2"/>`,
-    );
-    for (let i = 1; i < 6; i++)
-      bits.push(
-        `<path d="M${sx + (length * i) / 6} ${sy}v-${i % 2 ? 5 : 9}" stroke="#607b8a" stroke-width="1"/>`,
-      );
     bits.push('</svg>');
     return bits.join('');
   }

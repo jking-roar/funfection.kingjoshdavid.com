@@ -307,16 +307,7 @@ footer {
   letter-spacing: 0.12em;
   color: #607b8a;
 }
-.slide-scale {
-  position: absolute;
-  bottom: 12px;
-  right: 13px;
-  width: 42px;
-  height: 5px;
-  border: 1px solid #607b8a;
-  border-top: 0;
-  background: repeating-linear-gradient(90deg, transparent 0 6px, #607b8a 6px 7px);
-}
+
 #art,
 #art svg,
 .history-item svg {
