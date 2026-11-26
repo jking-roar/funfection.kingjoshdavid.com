@@ -7,36 +7,68 @@ const fields = Object.fromEntries(
 );
 let svgText = '',
   recipe;
-const HISTORY_KEY = 'funfection.art.history.v1';
 const HISTORY_LIMIT = 60;
-function loadHistory() {
+const SEED_DELAY_MS = 2000;
+const specimens = [];
+let historyDatabase;
+let seedTimer;
+function validHistory(saved) {
+  if (!Array.isArray(saved)) return [];
+  const restored = [];
+  const seen = new Set();
+  for (const item of saved) {
+    if (!item || !['prefix', 'family', 'suffix'].every((key) => catalog[key].includes(item[key])) ||
+        typeof item.seed !== 'string' || item.seed.length > 80) continue;
+    const specimen = Object.fromEntries(['prefix', 'family', 'suffix', 'seed'].map((key) => [key, item[key]]));
+    const signature = JSON.stringify(specimen);
+    if (seen.has(signature)) continue;
+    seen.add(signature);
+    restored.push(specimen);
+    if (restored.length === HISTORY_LIMIT) break;
+  }
+  return restored;
+}
+async function loadHistory() {
   try {
-    const saved = JSON.parse(localStorage.getItem(HISTORY_KEY));
-    if (!Array.isArray(saved)) return [];
-    const restored = [];
-    const seen = new Set();
-    for (const item of saved) {
-      if (!item || !['prefix', 'family', 'suffix'].every((key) => catalog[key].includes(item[key])) ||
-          typeof item.seed !== 'string' || item.seed.length > 80) continue;
-      const specimen = Object.fromEntries(['prefix', 'family', 'suffix', 'seed'].map((key) => [key, item[key]]));
-      const signature = JSON.stringify(specimen);
-      if (seen.has(signature)) continue;
-      seen.add(signature);
-      restored.push(specimen);
-      if (restored.length === HISTORY_LIMIT) break;
-    }
-    return restored;
+    historyDatabase = await new Promise((resolve, reject) => {
+      const request = indexedDB.open('funfection-art', 1);
+      request.onupgradeneeded = () => request.result.createObjectStore('history');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+      request.onblocked = () => reject(new Error('History database blocked'));
+    });
+    historyDatabase.onversionchange = () => {
+      historyDatabase.close();
+      historyDatabase = undefined;
+    };
+    const saved = await new Promise((resolve, reject) => {
+      const request = historyDatabase.transaction('history').objectStore('history').get('recipes');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    specimens.push(...validHistory(saved));
   } catch {
-    return [];
+    // Unavailable storage must not prevent the art lab from opening.
   }
 }
-const specimens = loadHistory();
-function saveHistory() {
+async function saveHistory() {
+  if (!historyDatabase) return;
   try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(specimens));
+    await new Promise((resolve, reject) => {
+      const transaction = historyDatabase.transaction('history', 'readwrite');
+      transaction.oncomplete = resolve;
+      transaction.onerror = () => reject(transaction.error);
+      transaction.onabort = () => reject(transaction.error);
+      transaction.objectStore('history').put(specimens, 'recipes');
+    });
   } catch {
-    // Storage may be disabled or full; keep history usable for this session.
+    // Keep session history usable if storage is disabled or full.
   }
+}
+function commitSeed() {
+  clearTimeout(seedTimer);
+  seedTimer = undefined;
+  if (fields.seed.value !== recipe?.seed) draw();
 }
 const historyPanel = document.getElementById('history');
 // Saved history and specimen rendering.
@@ -65,11 +97,13 @@ function showHistory() {
   }
 }
 function draw() {
+  clearTimeout(seedTimer);
+  seedTimer = undefined;
   recipe = Object.fromEntries(Object.entries(fields).map(([key, field]) => [key, field.value]));
   svgText = FunfectionArt.render(recipe, catalog);
   if (!specimens.some((item) => JSON.stringify(item) === JSON.stringify(recipe))) {
     specimens.unshift({ ...recipe });
-    // Bound saved recipes, including live seed edits.
+    // Bound saved recipes, including committed seed edits.
     if (specimens.length > HISTORY_LIMIT) specimens.pop();
     saveHistory();
   }
@@ -139,7 +173,8 @@ async function copyRecipeLink() {
 }
 
 // Restore the URL recipe, then connect controls and render the first specimen.
-function initialize() {
+async function initialize() {
+  await loadHistory();
   const params = new URLSearchParams(location.search);
   const newSeed = () =>
     Array.from(crypto.getRandomValues(new Uint32Array(2)), (x) => x.toString(36)).join('-');
@@ -153,7 +188,11 @@ function initialize() {
     fields[key].addEventListener('change', draw);
   }
   fields.seed.value = (params.get('seed') || newSeed()).slice(0, 80);
-  fields.seed.addEventListener('input', draw);
+  fields.seed.addEventListener('input', () => {
+    clearTimeout(seedTimer);
+    seedTimer = setTimeout(commitSeed, SEED_DELAY_MS);
+  });
+  fields.seed.addEventListener('blur', commitSeed);
   document.getElementById('recipe').addEventListener('submit', (e) => e.preventDefault());
   document.getElementById('random').onclick = () => {
     for (const key of ['prefix', 'family', 'suffix'])
