@@ -4,13 +4,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Funfection Art Maker</title>
-    <link rel="stylesheet" href="style.css?v=9" />
+    <link rel="stylesheet" href="style.css?v=10" />
     <script src="catalog.js?v=9" defer></script>
     <script src="traits.js?v=12" defer></script>
     <script src="config.js?v=9" defer></script>
     <script src="art.js?v=19" defer></script>
     <script src="plate.js?v=9" defer></script>
-    <script src="app.js?v=18" defer></script>
+    <script src="app.js?v=19" defer></script>
   </head>
   <body>
     <header><a href="/">FUNFECTION</a><span>Experiments in chance</span></header>
@@ -28,7 +28,7 @@
             <div class="current">
               <div class="microscope-slide">
                 <div id="plate-overlay" class="plate-overlay" aria-hidden="true"></div>
-                <div id="art" role="img" aria-label="Generated artwork"></div>
+                <div id="art" role="button" tabindex="0" aria-expanded="false" aria-label="Generated artwork" title="Click to enlarge; click again to restore"></div>
               </div>
               <div class="caption">
                 <h2 id="name"></h2>

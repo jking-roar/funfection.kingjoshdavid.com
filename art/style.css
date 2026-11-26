@@ -351,3 +351,33 @@ footer {
   position: relative;
   z-index: 1;
 }
+
+#art {
+  cursor: zoom-in;
+}
+#art:focus-visible {
+  outline: 3px solid #619bf2;
+  outline-offset: 3px;
+}
+body:has(#art[aria-expanded='true']) {
+  overflow: hidden;
+}
+/* Lift the slide's stacking context above the rest of the page. */
+.microscope-slide:has(#art[aria-expanded='true']) {
+  isolation: auto;
+  z-index: 100;
+}
+.microscope-slide #art[aria-expanded='true'] {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  aspect-ratio: auto;
+  background: #f5f7fa;
+  cursor: zoom-out;
+}
+#art[aria-expanded='true'] svg {
+  width: min(100vw, 100dvh);
+  height: min(100vw, 100dvh);
+}

@@ -193,6 +193,22 @@ async function initialize() {
     seedTimer = setTimeout(commitSeed, SEED_DELAY_MS);
   });
   fields.seed.addEventListener('blur', commitSeed);
+  const artwork = document.getElementById('art');
+  let enlarged = false;
+  const setEnlarged = (value) => {
+    enlarged = value;
+    artwork.setAttribute('aria-expanded', String(enlarged));
+    artwork.setAttribute('title', enlarged ? 'Click to restore' : 'Click to enlarge');
+  };
+  artwork.addEventListener('click', () => setEnlarged(!enlarged));
+  artwork.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      setEnlarged(!enlarged);
+    } else if (event.key === 'Escape') {
+      setEnlarged(false);
+    }
+  });
   document.getElementById('recipe').addEventListener('submit', (e) => e.preventDefault());
   document.getElementById('random').onclick = () => {
     for (const key of ['prefix', 'family', 'suffix'])
