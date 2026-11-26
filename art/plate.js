@@ -54,13 +54,8 @@
     }
     const labelX = side ? 38 : 470,
       labelY = n(30, 53);
-    const label = 'SEED ' + String(recipe.seed);
-    const escapedLabel = label.replace(/[&<>"']/g, (ch) =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch],
-    );
-    const fitLabel = label.length > 29 ? ' textLength="265" lengthAdjust="spacingAndGlyphs"' : '';
     bits.push(
-      `<g transform="translate(${labelX} ${labelY}) rotate(${n(-3, 3)})"><rect width="285" height="39" rx="2" fill="#ffffff" opacity=".65"/><text x="10" y="25" font-family="monospace" font-size="15" fill="#607b8a"${fitLabel}>${escapedLabel}</text></g>`,
+      `<g transform="translate(${labelX} ${labelY}) rotate(${n(-3, 3)})"><rect width="285" height="39" rx="2" fill="#ffffff" opacity=".65"/><text x="10" y="25" font-family="monospace" font-size="15" fill="#607b8a">FUNFECTION</text></g>`,
     );
     const sx = side ? 575 : 45,
       sy = n(895, 917),
@@ -75,6 +70,13 @@
     bits.push('</svg>');
     return bits.join('');
   }
-  root.FunfectionPlate = { render };
+  // Compose the same glass and specimen into one standalone export.
+  function compose(recipe, specimen) {
+    const glass = render(recipe).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '');
+    const artwork = specimen.replace(/^<svg[^>]*>/,
+      '<svg x="32" y="64" width="736" height="736" viewBox="0 0 800 800">');
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1900" viewBox="0 0 800 950">${glass}${artwork}</svg>`;
+  }
+  root.FunfectionPlate = { render, compose };
   if (typeof module !== 'undefined') module.exports = root.FunfectionPlate;
 })(globalThis);

@@ -159,7 +159,7 @@ test('page restores recipe, edits, randomizes, shares, and exports', async () =>
                       assert.equal(path.d, globalThis.FunfectionArt.cropPath(nodes.seed.value));
                     },
                     drawImage(img, x, y, w, h) {
-                      assert.deepEqual([x, y, w, h], [0, 0, 800, 800]);
+                      assert.deepEqual([x, y, w, h], [0, 0, 800, 950]);
                     },
                   };
                 },
@@ -207,7 +207,14 @@ test('page restores recipe, edits, randomizes, shares, and exports', async () =>
   nodes.svg.onclick();
   assert.match(downloads[0], /\.svg$/);
   assert.equal(blobs[0].type, 'image/svg+xml');
+  const exportedSvg = await blobs[0].text();
+  assert.match(exportedSvg, /plate-glass/);
+  assert.match(exportedSvg, />FUNFECTION<\/text>/);
+  assert.match(exportedSvg, /viewBox="0 0 800 950"/);
+  assert.match(exportedSvg, /data-instance=/);
+  assert.doesNotMatch(exportedSvg, />SEED /);
   await nodes.png.onclick();
+  assert.equal(await blobs[1].text(), exportedSvg, 'PNG uses the same complete slide as SVG');
   assert.match(downloads[1], /\.png$/);
   await nodes.share.onclick();
   assert.equal(copied, context.location.href);
@@ -328,7 +335,7 @@ test('glass presentation varies by virus and seed, and restores exactly', () => 
     outputs.add(svg);
   }
   assert.equal(outputs.size, 25);
-  assert.doesNotMatch(render(base, catalog), /plate-glass/, 'presentation must not enter exports');
+  assert.doesNotMatch(render(base, catalog), /plate-glass/, 'raw specimen stays separate from slide composition');
 });
 test('default icon scale doubles each motif without changing its anchor or crop', () => {
   const { config, cropPath } = globalThis.FunfectionArt,

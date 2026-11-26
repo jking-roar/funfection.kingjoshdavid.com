@@ -136,22 +136,21 @@ function download(blob, extension, name) {
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 function saveSvg() {
-  download(new Blob([svgText], { type: 'image/svg+xml' }), 'svg', filename());
+  download(new Blob([FunfectionPlate.compose(recipe, svgText)], { type: 'image/svg+xml' }), 'svg', filename());
 }
 async function savePng() {
   const name = filename(),
-    crop = FunfectionArt.cropPath(recipe.seed),
-    url = URL.createObjectURL(new Blob([svgText], { type: 'image/svg+xml' })),
+    url = URL.createObjectURL(new Blob([FunfectionPlate.compose(recipe, svgText)], { type: 'image/svg+xml' })),
     img = new Image();
   try {
     img.src = url;
     await img.decode();
     const canvas = document.createElement('canvas');
-    canvas.width = canvas.height = 1600;
+    canvas.width = 1600;
+    canvas.height = 1900;
     const ctx = canvas.getContext('2d');
     ctx.scale(2, 2);
-    ctx.clip(new Path2D(crop));
-    ctx.drawImage(img, 0, 0, 800, 800);
+    ctx.drawImage(img, 0, 0, 800, 950);
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
     if (!blob) throw Error();
     download(blob, 'png', name);
