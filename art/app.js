@@ -6,7 +6,8 @@ const fields = Object.fromEntries(
   ['prefix', 'family', 'suffix', 'seed'].map((key) => [key, document.getElementById(key)]),
 );
 let svgText = '',
-  recipe;
+  recipe,
+  enlarged = false;
 const HISTORY_LIMIT = 60;
 const SEED_DELAY_MS = 2000;
 const specimens = [];
@@ -108,7 +109,9 @@ function draw() {
     saveHistory();
   }
   showHistory();
-  document.getElementById('art').innerHTML = svgText;
+  document.getElementById('art').innerHTML = enlarged
+    ? FunfectionPlate.compose(recipe, svgText)
+    : svgText;
   document.getElementById('plate-overlay').innerHTML = FunfectionPlate.render(recipe);
   const name = [recipe.prefix, recipe.family, recipe.suffix].join(' ');
   document.getElementById('art').setAttribute('aria-label', name + ' abstract artwork');
@@ -193,9 +196,9 @@ async function initialize() {
   });
   fields.seed.addEventListener('blur', commitSeed);
   const artwork = document.getElementById('art');
-  let enlarged = false;
   const setEnlarged = (value) => {
     enlarged = value;
+    artwork.innerHTML = enlarged ? FunfectionPlate.compose(recipe, svgText) : svgText;
     artwork.setAttribute('aria-expanded', String(enlarged));
     artwork.setAttribute('title', enlarged ? 'Click to restore' : 'Click to enlarge');
   };

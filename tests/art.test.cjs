@@ -175,6 +175,16 @@ test('page restores recipe, edits, randomizes, shares, and exports', async () =>
   assert.equal(nodes.seed.value, 'example');
   assert.match(nodes.art.innerHTML, /<svg/);
   const first = nodes.art.innerHTML;
+  nodes.art.click();
+  assert.match(nodes.art.innerHTML, /plate-glass/);
+  assert.match(nodes.art.innerHTML, />FUNFECTION<\/text>/);
+  assert.match(nodes.art.innerHTML, /viewBox="0 0 800 950"/);
+  nodes.art.click();
+  assert.equal(nodes.art.innerHTML, first);
+  nodes.art.keydown({ key: 'Enter', preventDefault() {} });
+  assert.match(nodes.art.innerHTML, /plate-glass/);
+  nodes.art.keydown({ key: 'Escape' });
+  assert.equal(nodes.art.innerHTML, first);
   assert.equal(nodes.history.children.length, 1);
   nodes.seed.value = 'typed seed';
   nodes.seed.input();
