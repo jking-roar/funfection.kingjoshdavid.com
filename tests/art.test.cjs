@@ -675,3 +675,35 @@ test('size-aware packing limits body intrusion, including the reported Fable pla
     }
   }
 });
+
+test('saved history survives reloads, validates recipes, and tolerates storage failures', () => {
+  const vm = require('node:vm');
+  const source = fs.readFileSync(require.resolve('../art/app.js'), 'utf8').split('const historyPanel')[0];
+  let stored = null;
+  const storage = {
+    getItem: () => stored,
+    setItem: (key, value) => { stored = value; },
+  };
+  function load(localStorage = storage) {
+    const context = vm.createContext({ FunfectionCatalog: catalog, document: { getElementById() {} }, localStorage });
+    vm.runInContext(source, context);
+    return { context, recipes: () => JSON.parse(vm.runInContext('JSON.stringify(specimens)', context)) };
+  }
+  const first = load();
+  vm.runInContext('specimens.push(' + JSON.stringify(base) + '); saveHistory()', first.context);
+  assert.deepEqual(load().recipes(), [base]);
+  stored = JSON.stringify([null, { ...base, family: 'unknown' }, { ...base, seed: 42 },
+    { ...base, seed: 'x'.repeat(81) }, base, base,
+    ...Array.from({ length: 70 }, (_, i) => ({ ...base, seed: String(i) }))]);
+  const restored = load().recipes();
+  assert.equal(restored.length, 60);
+  assert.deepEqual(restored[0], base);
+  assert.equal(restored[59].seed, '58');
+  stored = '{broken';
+  assert.deepEqual(load().recipes(), []);
+  stored = '{}';
+  assert.deepEqual(load().recipes(), []);
+  const unavailable = load({ getItem() { throw Error(); }, setItem() { throw Error(); } });
+  assert.deepEqual(unavailable.recipes(), []);
+  assert.doesNotThrow(() => vm.runInContext('saveHistory()', unavailable.context));
+});

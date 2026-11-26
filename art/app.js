@@ -1,15 +1,45 @@
 'use strict';
 
-// Catalog, form controls, and session state.
+// Catalog, form controls, and saved history.
 const catalog = globalThis.FunfectionCatalog;
 const fields = Object.fromEntries(
   ['prefix', 'family', 'suffix', 'seed'].map((key) => [key, document.getElementById(key)]),
 );
 let svgText = '',
   recipe;
-const specimens = [];
+const HISTORY_KEY = 'funfection.art.history.v1';
+const HISTORY_LIMIT = 60;
+function loadHistory() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(HISTORY_KEY));
+    if (!Array.isArray(saved)) return [];
+    const restored = [];
+    const seen = new Set();
+    for (const item of saved) {
+      if (!item || !['prefix', 'family', 'suffix'].every((key) => catalog[key].includes(item[key])) ||
+          typeof item.seed !== 'string' || item.seed.length > 80) continue;
+      const specimen = Object.fromEntries(['prefix', 'family', 'suffix', 'seed'].map((key) => [key, item[key]]));
+      const signature = JSON.stringify(specimen);
+      if (seen.has(signature)) continue;
+      seen.add(signature);
+      restored.push(specimen);
+      if (restored.length === HISTORY_LIMIT) break;
+    }
+    return restored;
+  } catch {
+    return [];
+  }
+}
+const specimens = loadHistory();
+function saveHistory() {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(specimens));
+  } catch {
+    // Storage may be disabled or full; keep history usable for this session.
+  }
+}
 const historyPanel = document.getElementById('history');
-// Session history and specimen rendering.
+// Saved history and specimen rendering.
 function showHistory() {
   historyPanel.replaceChildren();
   const active = JSON.stringify(recipe);
@@ -39,8 +69,9 @@ function draw() {
   svgText = FunfectionArt.render(recipe, catalog);
   if (!specimens.some((item) => JSON.stringify(item) === JSON.stringify(recipe))) {
     specimens.unshift({ ...recipe });
-    // Bound memory for long sessions, including live seed edits.
-    if (specimens.length > 60) specimens.pop();
+    // Bound saved recipes, including live seed edits.
+    if (specimens.length > HISTORY_LIMIT) specimens.pop();
+    saveHistory();
   }
   showHistory();
   document.getElementById('art').innerHTML = svgText;
