@@ -109,10 +109,7 @@ function draw() {
     saveHistory();
   }
   showHistory();
-  document.getElementById('art').innerHTML = enlarged
-    ? FunfectionPlate.compose(recipe, svgText)
-    : svgText;
-  document.getElementById('plate-overlay').innerHTML = FunfectionPlate.render(recipe);
+  document.getElementById('art').innerHTML = FunfectionPlate.compose(recipe, svgText);
   const name = [recipe.prefix, recipe.family, recipe.suffix].join(' ');
   document.getElementById('art').setAttribute('aria-label', name + ' abstract artwork');
   document.getElementById('name').textContent = name;
@@ -198,7 +195,6 @@ async function initialize() {
   const artwork = document.getElementById('art');
   const setEnlarged = (value) => {
     enlarged = value;
-    artwork.innerHTML = enlarged ? FunfectionPlate.compose(recipe, svgText) : svgText;
     artwork.setAttribute('aria-expanded', String(enlarged));
     artwork.setAttribute('title', enlarged ? 'Click to restore' : 'Click to enlarge');
   };

@@ -176,6 +176,7 @@ test('page restores recipe, edits, randomizes, shares, and exports', async () =>
   assert.match(nodes.art.innerHTML, /<svg/);
   const first = nodes.art.innerHTML;
   nodes.art.click();
+  assert.equal(nodes.art.innerHTML, first);
   assert.match(nodes.art.innerHTML, /plate-glass/);
   assert.match(nodes.art.innerHTML, />FUNFECTION<\/text>/);
   assert.match(nodes.art.innerHTML, /viewBox="0 0 800 950"/);
@@ -218,6 +219,9 @@ test('page restores recipe, edits, randomizes, shares, and exports', async () =>
   assert.match(downloads[0], /\.svg$/);
   assert.equal(blobs[0].type, 'image/svg+xml');
   const exportedSvg = await blobs[0].text();
+  assert.equal(exportedSvg, nodes.art.innerHTML, 'export matches the main view');
+  assert.doesNotMatch(exportedSvg, /non-scaling-stroke/);
+  assert.doesNotMatch(exportedSvg, /NaN|Infinity/);
   assert.match(exportedSvg, /plate-glass/);
   assert.match(exportedSvg, />FUNFECTION<\/text>/);
   assert.match(exportedSvg, /viewBox="0 0 800 950"/);

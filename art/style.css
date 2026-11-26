@@ -372,3 +372,11 @@ body:has(#art[aria-expanded='true']) {
   width: min(100vw, 84.2105dvh);
   height: min(118.75vw, 100dvh);
 }
+
+/* All main views use the same complete slide SVG and proportions. */
+.microscope-slide {
+  padding: 0;
+}
+#art {
+  aspect-ratio: 800 / 950;
+}

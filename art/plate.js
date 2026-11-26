@@ -60,10 +60,33 @@
     bits.push('</svg>');
     return bits.join('');
   }
+  // Bake display-space stroke floors into SVG units at a 320px specimen width.
+  // Compensate for nested motif scales so small instances remain readable.
+  // The resulting strokes then scale proportionally in every view and export.
+  function scalableStrokes(specimen) {
+    const scales = [1];
+    return specimen.replace(/<\/?[a-zA-Z][^>]*>/g, (tag) => {
+      if (tag.startsWith('</')) {
+        scales.pop();
+        return tag;
+      }
+      let scale = scales[scales.length - 1];
+      const transform = tag.match(/\btransform="([^"]*)"/)?.[1] || '';
+      for (const match of transform.matchAll(/scale\(\s*([-\d.]+)(?:[ ,]+([-\d.]+))?\s*\)/g))
+        scale *= Math.abs(Number(match[1]));
+      if (tag.includes('vector-effect="non-scaling-stroke"')) {
+        tag = tag.replace(/ stroke-width="([^"]+)"/,
+          (_, width) => ` stroke-width="${Number((Number(width) * 2.5 / scale).toFixed(5))}"`)
+          .replace(' vector-effect="non-scaling-stroke"', '');
+      }
+      if (!tag.endsWith('/>')) scales.push(scale);
+      return tag;
+    });
+  }
   // Compose the same glass and specimen into one standalone export.
   function compose(recipe, specimen) {
     const glass = render(recipe).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '');
-    const artwork = specimen.replace(/^<svg[^>]*>/,
+    const artwork = scalableStrokes(specimen).replace(/^<svg[^>]*>/,
       '<svg x="32" y="64" width="736" height="736" viewBox="0 0 800 800">');
     return `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1900" viewBox="0 0 800 950">${glass}${artwork}</svg>`;
   }
